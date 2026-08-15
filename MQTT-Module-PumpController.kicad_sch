@@ -1,0 +1,553 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "fcdc4d99-6273-4901-9910-bd8fd00b962f")
+	(paper "A4")
+	(title_block
+		(title "MQTT - Pump Controller - Module")
+		(date "2026-08-12")
+		(rev "1.0")
+	)
+	(lib_symbols)
+	(bus_alias "I2C"
+		(members "SDA" "SCL")
+	)
+	(rectangle
+		(start 127 22.86)
+		(end 274.32 134.62)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid c1673e42-c7d4-4b52-ac2d-c95749efdad2)
+	)
+	(text "MQTT - Pump Controller - Module"
+		(exclude_from_sim no)
+		(at 62.23 25.4 0)
+		(effects
+			(font
+				(size 3.2 3.2)
+				(thickness 0.254)
+				(bold yes)
+			)
+		)
+		(uuid "98aa30d6-7c57-46a8-8408-a4d741493127")
+	)
+	(text_box "Additional BOM Items"
+		(exclude_from_sim no)
+		(at 20.32 125.73 0)
+		(size 43.18 5.08)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width -0.0001)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+				(thickness 0.254)
+				(bold yes)
+			)
+			(justify left top)
+		)
+		(uuid "1d41d7ae-5705-49b3-abcb-ac916823bd58")
+	)
+	(text_box "-"
+		(exclude_from_sim no)
+		(at 20.32 130.81 0)
+		(size 85.09 19.05)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width -0.0001)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+			)
+			(justify left top)
+		)
+		(uuid "2b5fa35c-344a-4282-b6a2-7cb1fa8ed256")
+	)
+	(text_box "Summary:"
+		(exclude_from_sim no)
+		(at 20.32 35.56 0)
+		(size 20.32 3.81)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width -0.0001)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+				(thickness 0.254)
+				(bold yes)
+			)
+			(justify left top)
+		)
+		(uuid "2e918530-a0be-4f7b-84d9-f853aa5273ba")
+	)
+	(text_box "Non BOM Items"
+		(exclude_from_sim no)
+		(at 20.32 93.98 0)
+		(size 33.02 3.81)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width -0.0001)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+				(thickness 0.254)
+				(bold yes)
+			)
+			(justify left top)
+		)
+		(uuid "44c57b02-95c9-405d-94f2-fd948a8ea3ef")
+	)
+	(text_box "Page 2: Controller\nPage 3: Headers\nPage 4: Pump Controller"
+		(exclude_from_sim no)
+		(at 20.32 68.58 0)
+		(size 85.09 19.05)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width -0.0001)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+			)
+			(justify left top)
+		)
+		(uuid "455d3d8b-e066-41af-a238-b2c79c695375")
+	)
+	(text_box "Table of Contents"
+		(exclude_from_sim no)
+		(at 20.32 63.5 0)
+		(size 33.02 3.81)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width -0.0001)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+				(thickness 0.254)
+				(bold yes)
+			)
+			(justify left top)
+		)
+		(uuid "52de908f-e9e3-4648-af82-d766fe0c628b")
+	)
+	(text_box "-"
+		(exclude_from_sim no)
+		(at 20.32 99.06 0)
+		(size 85.09 19.05)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width -0.0001)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+			)
+			(justify left top)
+		)
+		(uuid "e87eea99-7fb3-4a5c-aa02-2a145a16e6d0")
+	)
+	(text_box "Module for the ESP32 S3 based modular controller board.\nModule is designed to run a single lower power motor."
+		(exclude_from_sim no)
+		(at 20.32 40.64 0)
+		(size 104.14 15.24)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width -0.0001)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+			)
+			(justify left top)
+		)
+		(uuid "f3215bd1-dbc3-4d1b-8765-2c82910837b4")
+	)
+	(bus
+		(pts
+			(xy 229.87 73.66) (xy 220.98 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "02a20984-4560-4aa0-af59-585fc172ed9d")
+	)
+	(bus
+		(pts
+			(xy 173.99 45.72) (xy 173.99 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0a63b72a-e2ad-4490-b6e9-21b18a35d2d4")
+	)
+	(bus
+		(pts
+			(xy 224.79 80.01) (xy 224.79 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0fa6ae14-fc0e-4298-a6c0-66c6cd2b250b")
+	)
+	(bus
+		(pts
+			(xy 179.07 104.14) (xy 179.07 80.01)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "21420118-9aec-43b9-be78-b0f8900e07d8")
+	)
+	(bus
+		(pts
+			(xy 179.07 50.8) (xy 179.07 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7782c946-126f-4de7-8b2b-59d976c39e74")
+	)
+	(bus
+		(pts
+			(xy 220.98 80.01) (xy 224.79 80.01)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "aede79fe-93ca-4a45-92d6-a26563deddea")
+	)
+	(bus
+		(pts
+			(xy 229.87 104.14) (xy 229.87 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b704ae0f-8dc1-4420-8c08-e3ab96b6f130")
+	)
+	(bus
+		(pts
+			(xy 179.07 80.01) (xy 182.88 80.01)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ca2859a9-be2f-41fe-b946-b85b6997ff40")
+	)
+	(bus
+		(pts
+			(xy 182.88 45.72) (xy 173.99 45.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e0c28246-b287-4382-8952-fa89a5365dae")
+	)
+	(bus
+		(pts
+			(xy 179.07 73.66) (xy 182.88 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f5f8216d-88ef-4660-b2dd-a45f0a1badf7")
+	)
+	(bus
+		(pts
+			(xy 182.88 50.8) (xy 179.07 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fae2bb5c-5713-4e55-b072-704f63cc1c6d")
+	)
+	(sheet
+		(at 182.88 38.1)
+		(size 38.1 19.05)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "3f396550-8e50-448c-b09c-e7e2a4727b8c")
+		(property "Sheetname" "Pump Controller"
+			(at 189.484 37.338 0)
+			(effects
+				(font
+					(size 1.9 1.9)
+					(thickness 0.38)
+					(bold yes)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "pumpcontroller.kicad_sch"
+			(at 187.706 57.912 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "{PMP_Terminals}" output
+			(at 182.88 45.72 180)
+			(uuid "921c2e3f-5534-4935-9cbf-f675ce5e77be")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "{PMP}" bidirectional
+			(at 182.88 50.8 180)
+			(uuid "47d6ba44-aea0-4df4-80d5-b2e138825708")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 170.18 104.14)
+		(size 63.5 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "5bb4b2fb-c117-403c-b2ae-c89cbb06dbb3")
+		(property "Sheetname" "Headers"
+			(at 195.58 102.87 0)
+			(effects
+				(font
+					(size 1.9 1.9)
+					(thickness 0.38)
+					(bold yes)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "headers.kicad_sch"
+			(at 190.246 126.492 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "{GEN}" bidirectional
+			(at 229.87 104.14 90)
+			(uuid "ddbf2a00-6d2d-4c64-95bf-992fd39ab215")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "{I2C}" bidirectional
+			(at 224.79 104.14 90)
+			(uuid "413770fa-ea78-47d0-b00d-8627a35de0e0")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "{PMP_Terminals}" output
+			(at 173.99 104.14 90)
+			(uuid "73b5f5a8-4696-40b1-bbc7-e822715047de")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "{UDPI}" input
+			(at 179.07 104.14 90)
+			(uuid "39a60317-0213-481d-abbb-bef3ac40c6bf")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 182.88 68.58)
+		(size 38.1 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "aa87b2dd-90b3-41b3-8e99-8dcc5f11db59")
+		(property "Sheetname" "Controller"
+			(at 194.564 67.564 0)
+			(effects
+				(font
+					(size 1.9 1.9)
+					(thickness 0.38)
+					(bold yes)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "controller.kicad_sch"
+			(at 190.5 88.138 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "{GEN}" bidirectional
+			(at 220.98 73.66 0)
+			(uuid "8c6122bc-cec8-4b0e-9daa-c0a780ff75f9")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "{I2C}" bidirectional
+			(at 220.98 80.01 0)
+			(uuid "eb1b1155-e274-4f64-b3c8-2b0c889d183d")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "{PMP}" bidirectional
+			(at 182.88 73.66 180)
+			(uuid "ab569c33-fdd3-4e4e-98a0-0ab4578463ae")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "{UDPI}" bidirectional
+			(at 182.88 80.01 180)
+			(uuid "fe93a447-0829-4510-b738-62c67db1bb06")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)
