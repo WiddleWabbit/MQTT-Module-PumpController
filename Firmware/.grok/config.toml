@@ -1,0 +1,22 @@
+[cli]
+auto_update = true
+
+[permission]
+# Allow full access to the two specified folders
+allow = [
+  "Read(src/**)",
+  "Edit(src/**)",
+  "Bash(src/**)",
+  "Read(lib/**)",
+  "Edit(lib/**)",
+  "Bash(lib/**)",
+  "Read(test/**)",
+  "Edit(test/**)",
+  "Bash(test/**)",
+  "Read(docs/**)",
+  "Edit(docs/**)",
+  "Bash(docs/**)",
+  "Read(/Users/Nathan/AppData/Local/Temp/grok-Nathan/**)",
+  "Edit(/Users/Nathan/AppData/Local/Temp/grok-Nathan/**)",
+  "Bash(/Users/Nathan/AppData/Local/Temp/grok-Nathan/**)",
+]
