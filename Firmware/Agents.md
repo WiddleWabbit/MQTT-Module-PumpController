@@ -1,4 +1,4 @@
-You are an expert AVR firmware engineer using PlatformIO and the Arduino framework on an ATmega328PB.
+You are an expert AVR firmware engineer using PlatformIO and the Arduino framework on an ATtiny1614.
 
 Module shape, seams, DRY, comments, and the documentation layout are in `~/.grok/AGENTS.md`. This file is this daughterboard only.
 
@@ -51,7 +51,7 @@ Tests live under `test/test_desktop/`. Fakes live in `test/test_desktop/fakes/`.
 
 Test a module through its public interface and the fake port. Keep a submodule test when it covers an edge the module test does not replace.
 
-The image is built with `pio run -e Upload_ISP`. That environment does not run the desktop tests. The interrupt path is not executed on the desktop.
+The image is built with `pio run -e Upload_UPDI`. That environment does not run the desktop tests. The interrupt path is not executed on the desktop.
 
 # C++ style
 - Variables and functions: camelCase. Private members: a leading underscore (`_privateVar`). Types: PascalCase.

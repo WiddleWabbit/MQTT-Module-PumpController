@@ -1,5 +1,10 @@
 #include <Arduino.h>
 
+#include "AvrTwi0Slave.h"
+#include "ModuleLink.h"
+#include "ModuleProtocol.h"
+
+
 // ========== Board pins ==========
 
 // megaTinyCore numbers for the ATtiny1614. PA0 stays the UPDI pin.
@@ -34,14 +39,24 @@ static_assert(PMP_EN_PIN == 6, "PB1 is pump enable.");
 static_assert(PMP_STATUS_PIN == 7, "PB0 is pump status.");
 
 
+// ========== Product settings ==========
+
+const uint16_t MODULE_TYPE = module_protocol::kTypePumpModule;
+const uint16_t FIRMWARE_VERSION = 1;
+
+
+// ========== Modules ==========
+
+AvrTwi0Slave moduleSlave(SDA_PIN, SCL_PIN);
+ModuleLink moduleLink(moduleSlave, MODULE_TYPE, FIRMWARE_VERSION);
+
+
 // ========== Application ==========
 
-const unsigned long LED_STEP_MS = 1000;
-
-
 /**
- * Turns both LEDs off and holds the pump enable low. This lamp test
- * must not start the pump.
+ * Drives SNS low so the motherboard sees this module seated, and holds
+ * MOD as an input with pull-up. The pump enable and both LEDs stay
+ * low. The slave stays off until MOD is low.
  *
  * @return Nothing.
  */
@@ -54,22 +69,21 @@ void setup()
   digitalWrite(P_WARN_PIN, LOW);
   pinMode(P_ON_PIN, OUTPUT);
   pinMode(P_WARN_PIN, OUTPUT);
+
+  pinMode(SNS_PIN, OUTPUT);
+  digitalWrite(SNS_PIN, LOW);
+  pinMode(MOD_PIN, INPUT_PULLUP);
 }
 
 /**
- * Lights the green pump-on LED for one second, then the yellow
- * warning LED for one second. The two LEDs never share a state.
- * Each step blocks in delay().
+ * Gates the unconfigured address on MOD. A low MOD enables 0x0A.
+ * After SET_ADDRESS the link keeps that address. This loop does not
+ * block, so the host's 5 ms MOD gate is met.
  *
  * @return Nothing.
  */
 void loop()
 {
-  digitalWrite(P_ON_PIN, HIGH);
-  digitalWrite(P_WARN_PIN, LOW);
-  delay(LED_STEP_MS);
-
-  digitalWrite(P_ON_PIN, LOW);
-  digitalWrite(P_WARN_PIN, HIGH);
-  delay(LED_STEP_MS);
+  const bool modIsLow = digitalRead(MOD_PIN) == LOW;
+  moduleLink.update(modIsLow);
 }
