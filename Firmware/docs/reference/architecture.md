@@ -11,9 +11,10 @@ link once per pass.
 ## Classes
 
 `setup` drives `SNS_PIN`, configures `MOD_PIN`, and holds the pump
-enable and both LEDs low. `loop` reads `MOD_PIN` and calls
-`ModuleLink::update`. The objects are `moduleSlave` (`AvrTwi0Slave`)
-and `moduleLink` (`ModuleLink`).
+enable low. Both LEDs light for one second at boot, then stay low.
+Delete that pause once the LEDs are confirmed. `loop` reads `MOD_PIN`
+and calls `ModuleLink::update`. The objects are `moduleSlave`
+(`AvrTwi0Slave`) and `moduleLink` (`ModuleLink`).
 
 ## States
 
@@ -23,8 +24,9 @@ are the link's states, on the [module link reference](module-link.md).
 ## Sequences
 
 1. Construction registers the master-write handler. The slave stays off.
-2. `setup` sets `SNS_PIN` as an output driven low, `MOD_PIN` as an input with pull-up, and `PMP_EN_PIN`, `P_ON_PIN`, and `P_WARN_PIN` as outputs driven low.
-3. Each `loop` reads `MOD_PIN` and calls the link. The call returns without waiting.
+2. `setup` drives `PMP_EN_PIN` low, lights `P_ON_PIN` and `P_WARN_PIN` for one second, then drives both LEDs low. That pause is temporary.
+3. `setup` sets `SNS_PIN` as an output driven low and `MOD_PIN` as an input with pull-up.
+4. Each `loop` reads `MOD_PIN` and calls the link. The call returns without waiting.
 
 The host holds MOD low for `kModGateMaxMs` (5 ms). Because `loop` does
 not block, the unconfigured address is enabled on the pass that sees

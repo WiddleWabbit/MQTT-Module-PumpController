@@ -41,9 +41,11 @@ holds the link. Desktop fakes live in `test/test_desktop/fakes/`.
 
 ## One update
 
-`setup()` drives `SNS_PIN` low so the motherboard sense line says the
-module is seated, holds `MOD_PIN` as an input with pull-up, and holds
-`PMP_EN_PIN`, `P_ON_PIN`, and `P_WARN_PIN` low.
+`setup()` holds `PMP_EN_PIN` low, lights `P_ON_PIN` and `P_WARN_PIN`
+for one second, then drives both LEDs low. That pause is temporary.
+Delete it once the LEDs are confirmed. It finishes before `SNS_PIN`
+goes low, while the host still treats the module as absent. `setup()`
+then drives `SNS_PIN` low and holds `MOD_PIN` as an input with pull-up.
 
 ```mermaid
 flowchart TD

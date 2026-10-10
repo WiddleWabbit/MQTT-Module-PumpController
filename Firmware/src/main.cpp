@@ -55,8 +55,9 @@ ModuleLink moduleLink(moduleSlave, MODULE_TYPE, FIRMWARE_VERSION);
 
 /**
  * Drives SNS low so the motherboard sees this module seated, and holds
- * MOD as an input with pull-up. The pump enable and both LEDs stay
- * low. The slave stays off until MOD is low.
+ * MOD as an input with pull-up. The pump enable stays low. Both LEDs
+ * light for one second at boot, then stay low. Delete that pause once
+ * the LEDs are confirmed. The slave stays off until MOD is low.
  *
  * @return Nothing.
  */
@@ -65,10 +66,15 @@ void setup()
   digitalWrite(PMP_EN_PIN, LOW);
   pinMode(PMP_EN_PIN, OUTPUT);
 
-  digitalWrite(P_ON_PIN, LOW);
-  digitalWrite(P_WARN_PIN, LOW);
+  // TEMP: both LEDs on for 1 s at boot. Delete this block once the
+  // LEDs are confirmed. SNS stays high-Z until after this.
+  digitalWrite(P_ON_PIN, HIGH);
+  digitalWrite(P_WARN_PIN, HIGH);
   pinMode(P_ON_PIN, OUTPUT);
   pinMode(P_WARN_PIN, OUTPUT);
+  delay(1000);
+  digitalWrite(P_ON_PIN, LOW);
+  digitalWrite(P_WARN_PIN, LOW);
 
   pinMode(SNS_PIN, OUTPUT);
   digitalWrite(SNS_PIN, LOW);
