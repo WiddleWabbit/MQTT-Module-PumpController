@@ -36,13 +36,40 @@ static_assert(PMP_STATUS_PIN == 7, "PB0 is pump status.");
 
 // ========== Application ==========
 
+const unsigned long LED_STEP_MS = 1000;
+
+
+/**
+ * Turns both LEDs off and holds the pump enable low. This lamp test
+ * must not start the pump.
+ *
+ * @return Nothing.
+ */
 void setup()
 {
+  digitalWrite(PMP_EN_PIN, LOW);
+  pinMode(PMP_EN_PIN, OUTPUT);
 
+  digitalWrite(P_ON_PIN, LOW);
+  digitalWrite(P_WARN_PIN, LOW);
+  pinMode(P_ON_PIN, OUTPUT);
+  pinMode(P_WARN_PIN, OUTPUT);
 }
 
-
+/**
+ * Lights the green pump-on LED for one second, then the yellow
+ * warning LED for one second. The two LEDs never share a state.
+ * Each step blocks in delay().
+ *
+ * @return Nothing.
+ */
 void loop()
 {
+  digitalWrite(P_ON_PIN, HIGH);
+  digitalWrite(P_WARN_PIN, LOW);
+  delay(LED_STEP_MS);
 
+  digitalWrite(P_ON_PIN, LOW);
+  digitalWrite(P_WARN_PIN, HIGH);
+  delay(LED_STEP_MS);
 }
