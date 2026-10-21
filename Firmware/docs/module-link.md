@@ -9,14 +9,15 @@ this pump board. It listens at `0x0A` only while MOD is low, then
 keeps the assigned address. It reports the type and firmware version
 supplied at construction, and protocol version 1.
 
-A command this board does not implement, including the pump commands,
-returns `UnknownCmd`. The pump enable stays low.
+`GET_PUMP_STATE`, `SET_PUMP`, and `RESET_PUMP` call the pump and reply
+with its state byte. A command this board does not implement returns
+`UnknownCmd`.
 
 The module includes no Arduino headers.
 
 ## Where it sits
 
-`main.cpp` constructs it with `AvrTwi0Slave`, `MODULE_TYPE`
+`main.cpp` constructs it with `AvrTwi0Slave`, the pump, `MODULE_TYPE`
 (`kTypePumpModule`), and `FIRMWARE_VERSION`. `loop()` calls
 `update(modIsLow)`. A master write arrives through the handler the
 constructor registered, from the TWI receive callback or from
@@ -27,10 +28,12 @@ constructor registered, from the TWI receive callback or from
 ```text
 ModuleLink
   IModuleSlavePort    enable, disable, setAddress, setReply
+  Pump                state for GET, SET, and RESET
 ```
 
-The link has no submodules. It cannot be copied: the port stores the
-link as the write context.
+The link does not create the pump. `main.cpp` does, and passes it in.
+The link cannot be copied: the port stores the link as the write
+context.
 
 ## One update
 
@@ -63,5 +66,6 @@ port before the handler returns. The host reads that copy.
 ## See also
 
 - [Module link reference](reference/module-link.md) — states, commands, errors, tests.
+- [Pump](pump.md) — what the state byte means.
 - [Slave port](slave-port.md)
 - [Architecture](architecture.md)

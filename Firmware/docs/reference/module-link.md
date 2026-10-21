@@ -14,9 +14,9 @@ disagree, the header wins.
 
 ## Classes
 
-`ModuleLink(IModuleSlavePort& port, uint16_t typeId, uint16_t firmwareVersion)`
-binds the port and registers the master-write handler. The slave stays
-off. Copy and assignment are deleted.
+`ModuleLink(IModuleSlavePort& port, Pump& pump, uint16_t typeId, uint16_t firmwareVersion)`
+binds the port and the pump, and registers the master-write handler.
+The slave stays off. Copy and assignment are deleted.
 
 `update(bool modIsLow)` is the call `loop` makes.
 
@@ -65,7 +65,13 @@ On the AVR the handler runs from the TWI interrupt. On the desktop,
 | `SET_ADDRESS` | enabled, not yet assigned, one payload byte, address `0x10`–`0x6F` | `setAddress`, no reply. Slot 1 is `03 03 10 F2` |
 | `SET_ADDRESS` | payload length is not 1 | `BadLength`, no commit |
 | `SET_ADDRESS` | disabled, already assigned, or address outside `0x10`–`0x6F` | no reply, no commit |
-| any other command, including `ECHO`, `GET_PUMP_STATE`, `SET_PUMP`, and `RESET_PUMP` | | `UnknownCmd` |
+| `GET_PUMP_STATE` | empty payload | `Ok` and one state byte. See the [pump reference](pump.md) |
+| `GET_PUMP_STATE` | any payload | `BadLength`. The pump is unchanged |
+| `SET_PUMP` | one byte, `0` or `1` | `Ok` and the state byte. Off turns the switch off. On turns it on. A fault stays faulted |
+| `SET_PUMP` | empty, two bytes, or a byte other than `0` or `1` | `BadLength`. The pump is unchanged |
+| `RESET_PUMP` | empty payload | clears a fault and turns the switch off. `Ok` and the state byte |
+| `RESET_PUMP` | any payload | `BadLength`. The pump is unchanged |
+| any other command, including `ECHO` and `GET_SENSOR_COUNT` | | `UnknownCmd` |
 
 Identity payload, big-endian: type high, type low, `kProtocolVersion`,
 firmware high, firmware low. `kIdentityPayloadLen` is 5. For
@@ -81,7 +87,7 @@ through `kMaxAssignedAddress`.
 
 | Status | Constant | When |
 | --- | --- | --- |
-| `Ok` | `kStatusOk` (`0x00`) | PING or identity |
+| `Ok` | `kStatusOk` (`0x00`) | PING, identity, or a pump command |
 | `BadCrc` | `kStatusBadCrc` (`0x01`) | CRC byte does not match |
 | `UnknownCmd` | `kStatusUnknownCmd` (`0x02`) | Command this type does not implement |
 | `BadLength` | `kStatusBadLength` (`0x03`) | Short frame, length mismatch, or a payload length the command rejects |
@@ -112,8 +118,20 @@ values it was given.
 | `testSetAddressCommitsAndSurvivesModHigh` | Request `03 03 10 F2`. A write while off does not commit. Then commit `0x10`, ignore `0x11`, stay on after MOD rises, and still answer PING |
 | `testSetAddressAcceptsTopOfRange` | `0x6F` commits and queues no reply |
 | `testSetAddressRejectsBadCrcAndIllegalAddresses` | Bad CRC, `0x00`, `0x0A`, and `0x70` stay at `0x0A` |
-| `testUnknownCommandAndMalformedFrames` | `ECHO`, the three pump commands, `GET_SENSOR_COUNT`, truncated frame, extra byte, bad CRC, PING with a payload, empty `SET_ADDRESS` |
+| `testUnknownCommandAndMalformedFrames` | `ECHO`, `GET_SENSOR_COUNT`, truncated frame, extra byte, bad CRC, PING with a payload, empty `SET_ADDRESS` |
 | `testEnumerationSequence` | PING, assign `0x10`, MOD high, PING, identity |
+| `testGetPumpStateWhenOff` | `GET_PUMP_STATE` is `Ok` and off. Enable stays low |
+| `testGetPumpStateRejectsPayload` | A payload is `BadLength`. The pump stays off |
+| `testSetPumpOnAndOff` | `SET` on reports on with enable high. `SET` off reports off |
+| `testSetPumpRejectsBadPayload` | Fault, empty, and two-byte `SET` payloads are `BadLength` |
+| `testSetPumpWhileFaultedStaysFault` | `SET` on or off while faulted returns fault and leaves enable low |
+| `testResetClearsFault` | `RESET` returns off. A later `SET` on runs |
+| `testResetRejectsPayload` | A payload is `BadLength` and the fault stays |
+| `testStartTimeoutReportsFault` | `GET` during the window is on. After the limit it is fault, yellow on |
+| `testRunningReportsOnAndGreen` | `SET` on with `nPGD` low reports on and lights green |
+
+Pump state-machine cases are on the [pump reference](pump.md).
+`test_module_link.cpp` calls `runPumpTests()`.
 
 ```text
 C:\Users\Nathan\.platformio\penv\Scripts\platformio.exe test -e native
@@ -125,3 +143,4 @@ C:\Users\Nathan\.platformio\penv\Scripts\platformio.exe test -e native
 - `lib/Logic/ModuleLink.cpp`
 - `test/test_desktop/test_module_link.cpp`
 - `test/test_desktop/fakes/FakeModuleSlavePort.h`
+- `test/test_desktop/fakes/FakePumpPort.h`

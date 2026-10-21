@@ -9,8 +9,8 @@ motherboard is the I2C master. Plugging the board in is enough for the
 motherboard to assign an address and identify a pump module.
 
 `src/main.cpp` is the composition root. It owns the pin constants and
-the product settings, constructs the adapter and the link, and calls
-`update()` on the link.
+the product settings, constructs the adapters, the pump, and the link,
+and calls `update()` on the pump and the link.
 
 ## Where it sits
 
@@ -28,30 +28,35 @@ for the pump. Arduino `Wire` is that peripheral. `AvrTwi0Slave` calls
 ```text
 main.cpp
   AvrTwi0Slave    TWI0 adapter for IModuleSlavePort
+  AvrPumpPort     enable, nPGD, and the two lamps
+  Pump            switch, fault latch, and lamps
   ModuleLink      MOD gate, frames, and replies
 ```
 
 `main.cpp` passes `MODULE_TYPE` and `FIRMWARE_VERSION` into the link,
-and passes `SDA_PIN` and `SCL_PIN` into the adapter. Pin numbers stay
-in `main.cpp`.
+passes the pump into the link, and passes `PUMP_STATUS_LIMIT_MS` into
+the pump. Pin numbers stay in `main.cpp`.
 
-`lib/Interfaces/` holds `IModuleSlavePort` and the copied
-`ModuleProtocol.h`. `lib/Drivers/` holds the AVR adapter. `lib/Logic/`
-holds the link. Desktop fakes live in `test/test_desktop/fakes/`.
+`lib/Interfaces/` holds `IModuleSlavePort`, `IPumpPort`, and the copied
+`ModuleProtocol.h`. `lib/Drivers/` holds the AVR adapters. `lib/Logic/`
+holds the pump and the link. Desktop fakes live in
+`test/test_desktop/fakes/`.
 
 ## One update
 
-`setup()` holds `PMP_EN_PIN` low, lights `P_ON_PIN` and `P_WARN_PIN`
-for one second, then drives both LEDs low. That pause is temporary.
-Delete it once the LEDs are confirmed. It finishes before `SNS_PIN`
-goes low, while the host still treats the module as absent. `setup()`
-then drives `SNS_PIN` low and holds `MOD_PIN` as an input with pull-up.
+`setup()` calls `AvrPumpPort::begin()`, which drives enable and both
+lamps low and leaves `nPGD` as an input. It then drives `SNS_PIN` low
+and holds `MOD_PIN` as an input with pull-up.
 
 ```mermaid
 flowchart TD
-  loop["loop()"] --> read["digitalRead MOD_PIN"]
+  loop["loop()"] --> sample["pump.update(millis)"]
+  sample --> read["digitalRead MOD_PIN"]
   read --> upd["moduleLink.update(modIsLow)"]
 ```
+
+`pump.update` runs with interrupts off. `GET_PUMP_STATE`, `SET_PUMP`,
+and `RESET_PUMP` call the pump from the TWI interrupt.
 
 `loop()` does not block, so a low MOD is seen inside `kModGateMaxMs`.
 While the module has no address, MOD low enables `0x0A` and MOD high
@@ -60,15 +65,19 @@ when MOD rises.
 
 ## What is stored, and who reads it
 
-Each pass reads `MOD_PIN` and passes that level to the link. The
-motherboard reads the sense line, which `SNS_PIN` holds low.
+Each pass reads `MOD_PIN` and passes that level to the link. The pump
+reads `nPGD` on its own port. The motherboard reads the sense line,
+which `SNS_PIN` holds low.
 
-The link stores the address and whether it has been assigned. The TWI0
-adapter stores the reply the host clocks out. Those stores are on the
-[module link](module-link.md) and [slave port](slave-port.md) pages.
+The pump stores its phase and the start of the `nPGD` window. The link
+stores the address and whether it has been assigned. The TWI0 adapter
+stores the reply the host clocks out. Those stores are on the
+[pump](pump.md), [module link](module-link.md), and
+[slave port](slave-port.md) pages.
 
 ## See also
 
 - [Architecture reference](reference/architecture.md) — pins, the pass, the image build.
+- [Pump](pump.md)
 - [Module link](module-link.md)
 - [Slave port](slave-port.md)

@@ -4,25 +4,28 @@
 #include <stdint.h>
 
 #include "IModuleSlavePort.h"
+#include "Pump.h"
 
 /**
  * Slave side of the motherboard module protocol for one pump module.
  * Listens at 0x0A only while MOD is low, then keeps the assigned address.
  * Reports the supplied type and firmware version, and protocol 1.
+ * Pump commands read and command the supplied pump.
  * No Arduino types.
  */
 class ModuleLink
 {
 public:
   /**
-   * Binds the slave port and registers this link as the master-write
-   * handler. The slave stays disabled until update().
+   * Binds the slave port and the pump, and registers this link as
+   * the master-write handler. The slave stays disabled until update().
    *
    * @param port Port that enables TWI and stores replies.
+   * @param pump Pump commanded by GET, SET, and RESET.
    * @param typeId Module type reported by GET_IDENTITY.
    * @param firmwareVersion Firmware version reported by GET_IDENTITY.
    */
-  explicit ModuleLink(IModuleSlavePort& port, uint16_t typeId,
+  explicit ModuleLink(IModuleSlavePort& port, Pump& pump, uint16_t typeId,
                       uint16_t firmwareVersion);
 
   /**
@@ -105,7 +108,15 @@ private:
   void _replyPayload(uint8_t status, const uint8_t* payload,
                      uint8_t payloadLen);
 
+  /**
+   * Queues an Ok reply whose payload is the current pump state.
+   *
+   * @return Nothing.
+   */
+  void _replyPumpState();
+
   IModuleSlavePort& _port;
+  Pump& _pump;
   uint16_t _typeId;
   uint16_t _firmwareVersion;
   uint8_t _address;

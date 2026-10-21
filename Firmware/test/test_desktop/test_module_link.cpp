@@ -2,20 +2,32 @@
 
 #include "ModuleLink.h"
 #include "ModuleProtocol.h"
+#include "Pump.h"
 #include "fakes/FakeModuleSlavePort.h"
+#include "fakes/FakePumpPort.h"
+
+/**
+ * Runs the pump state-machine tests. Defined in test_pump.cpp.
+ *
+ * @return Nothing.
+ */
+void runPumpTests();
 
 namespace
 {
 
 constexpr uint16_t kTestType = module_protocol::kTypePumpModule;
 constexpr uint16_t kTestFirmwareVersion = 1;
+constexpr uint32_t kStatusLimitMs = 300;
 
 /**
- * One link and its slave fake.
+ * One link, its slave fake, and the pump the link commands.
  */
 struct Board
 {
   FakeModuleSlavePort port;
+  FakePumpPort pumpPort;
+  Pump pump;
   ModuleLink link;
 
   /**
@@ -26,7 +38,8 @@ struct Board
    */
   explicit Board(uint16_t typeId = kTestType,
                  uint16_t firmwareVersion = kTestFirmwareVersion)
-    : link(port, typeId, firmwareVersion)
+    : pump(pumpPort, kStatusLimitMs),
+      link(port, pump, typeId, firmwareVersion)
   {
   }
 };
@@ -355,9 +368,9 @@ void testSetAddressRejectsBadCrcAndIllegalAddresses()
 }
 
 /**
- * ECHO, the pump commands, and a sensor command are unknown. A short
- * frame, a mismatched length, a bad CRC, a PING with a payload, and
- * an empty SET_ADDRESS are rejected.
+ * ECHO and a sensor command are unknown. A short frame, a mismatched
+ * length, a bad CRC, a PING with a payload, and an empty SET_ADDRESS
+ * are rejected.
  *
  * @return Nothing.
  */
@@ -370,13 +383,6 @@ void testUnknownCommandAndMalformedFrames()
   writeCommand(board.port, module_protocol::kCmdEcho, &echoByte, 1);
   expectReply(board.port, module_protocol::kStatusUnknownCmd, nullptr, 0);
 
-  writeCommand(board.port, module_protocol::kCmdGetPumpState, nullptr, 0);
-  expectReply(board.port, module_protocol::kStatusUnknownCmd, nullptr, 0);
-  const uint8_t desiredOn = module_protocol::kPumpStateOn;
-  writeCommand(board.port, module_protocol::kCmdSetPump, &desiredOn, 1);
-  expectReply(board.port, module_protocol::kStatusUnknownCmd, nullptr, 0);
-  writeCommand(board.port, module_protocol::kCmdResetPump, nullptr, 0);
-  expectReply(board.port, module_protocol::kStatusUnknownCmd, nullptr, 0);
   writeCommand(board.port, module_protocol::kCmdGetSensorCount, nullptr, 0);
   expectReply(board.port, module_protocol::kStatusUnknownCmd, nullptr, 0);
 
@@ -438,6 +444,221 @@ void testEnumerationSequence()
 }
 
 /**
+ * GET_PUMP_STATE at boot is Ok and off. Enable stays low.
+ *
+ * @return Nothing.
+ */
+void testGetPumpStateWhenOff()
+{
+  Board board;
+  board.link.update(true);
+
+  writeCommand(board.port, module_protocol::kCmdGetPumpState, nullptr, 0);
+
+  const uint8_t state = module_protocol::kPumpStateOff;
+  expectReply(board.port, module_protocol::kStatusOk, &state, 1);
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_FALSE(board.pumpPort.runningLamp);
+  TEST_ASSERT_FALSE(board.pumpPort.warningLamp);
+}
+
+/**
+ * GET_PUMP_STATE with a payload is BadLength and leaves the pump off.
+ *
+ * @return Nothing.
+ */
+void testGetPumpStateRejectsPayload()
+{
+  Board board;
+  const uint8_t extra = 0;
+
+  writeCommand(board.port, module_protocol::kCmdGetPumpState, &extra, 1);
+
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+}
+
+/**
+ * SET on reports on with enable high and both lamps off. SET off
+ * reports off and drops enable.
+ *
+ * @return Nothing.
+ */
+void testSetPumpOnAndOff()
+{
+  Board board;
+  board.pump.update(0);
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t off = module_protocol::kPumpStateOff;
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+
+  expectReply(board.port, module_protocol::kStatusOk, &on, 1);
+  TEST_ASSERT_TRUE(board.pumpPort.enable);
+  TEST_ASSERT_FALSE(board.pumpPort.runningLamp);
+  TEST_ASSERT_FALSE(board.pumpPort.warningLamp);
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &off, 1);
+
+  expectReply(board.port, module_protocol::kStatusOk, &off, 1);
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_FALSE(board.pumpPort.runningLamp);
+  TEST_ASSERT_FALSE(board.pumpPort.warningLamp);
+}
+
+/**
+ * SET with fault, an empty payload, or two bytes is BadLength.
+ * The pump stays off.
+ *
+ * @return Nothing.
+ */
+void testSetPumpRejectsBadPayload()
+{
+  Board board;
+  const uint8_t fault = module_protocol::kPumpStateFault;
+  const uint8_t pair[] = {module_protocol::kPumpStateOn, 0};
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &fault, 1);
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+  writeCommand(board.port, module_protocol::kCmdSetPump, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+  writeCommand(board.port, module_protocol::kCmdSetPump, pair, 2);
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+}
+
+/**
+ * SET on or off while faulted returns fault and leaves enable low.
+ *
+ * @return Nothing.
+ */
+void testSetPumpWhileFaultedStaysFault()
+{
+  Board board;
+  board.pump.update(0);
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t off = module_protocol::kPumpStateOff;
+  const uint8_t fault = module_protocol::kPumpStateFault;
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(kStatusLimitMs);
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  expectReply(board.port, module_protocol::kStatusOk, &fault, 1);
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_TRUE(board.pumpPort.warningLamp);
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &off, 1);
+  expectReply(board.port, module_protocol::kStatusOk, &fault, 1);
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_FALSE(board.pumpPort.runningLamp);
+  TEST_ASSERT_TRUE(board.pumpPort.warningLamp);
+}
+
+/**
+ * RESET from fault returns off. A later SET on is accepted.
+ *
+ * @return Nothing.
+ */
+void testResetClearsFault()
+{
+  Board board;
+  board.pump.update(0);
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t off = module_protocol::kPumpStateOff;
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(kStatusLimitMs);
+
+  writeCommand(board.port, module_protocol::kCmdResetPump, nullptr, 0);
+
+  expectReply(board.port, module_protocol::kStatusOk, &off, 1);
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_FALSE(board.pumpPort.warningLamp);
+
+  board.pumpPort.statusLow = true;
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  expectReply(board.port, module_protocol::kStatusOk, &on, 1);
+  TEST_ASSERT_TRUE(board.pumpPort.enable);
+  TEST_ASSERT_TRUE(board.pumpPort.runningLamp);
+  TEST_ASSERT_FALSE(board.pumpPort.warningLamp);
+}
+
+/**
+ * RESET with a payload is BadLength and leaves the fault latched.
+ *
+ * @return Nothing.
+ */
+void testResetRejectsPayload()
+{
+  Board board;
+  board.pump.update(0);
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t extra = 0;
+  const uint8_t fault = module_protocol::kPumpStateFault;
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(kStatusLimitMs);
+
+  writeCommand(board.port, module_protocol::kCmdResetPump, &extra, 1);
+
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+  TEST_ASSERT_EQUAL_UINT8(fault, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_TRUE(board.pumpPort.warningLamp);
+}
+
+/**
+ * GET during the start window is on. After the limit it is fault,
+ * enable is low, and the yellow lamp is on.
+ *
+ * @return Nothing.
+ */
+void testStartTimeoutReportsFault()
+{
+  Board board;
+  board.pump.update(0);
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t fault = module_protocol::kPumpStateFault;
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+
+  board.pump.update(kStatusLimitMs - 1);
+  writeCommand(board.port, module_protocol::kCmdGetPumpState, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, &on, 1);
+  TEST_ASSERT_TRUE(board.pumpPort.enable);
+  TEST_ASSERT_FALSE(board.pumpPort.runningLamp);
+  TEST_ASSERT_FALSE(board.pumpPort.warningLamp);
+
+  board.pump.update(kStatusLimitMs);
+  writeCommand(board.port, module_protocol::kCmdGetPumpState, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, &fault, 1);
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_TRUE(board.pumpPort.warningLamp);
+}
+
+/**
+ * SET on with nPGD already low reports on and lights the green lamp.
+ *
+ * @return Nothing.
+ */
+void testRunningReportsOnAndGreen()
+{
+  Board board;
+  board.pump.update(0);
+  board.pumpPort.statusLow = true;
+  const uint8_t on = module_protocol::kPumpStateOn;
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  expectReply(board.port, module_protocol::kStatusOk, &on, 1);
+  writeCommand(board.port, module_protocol::kCmdGetPumpState, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, &on, 1);
+
+  TEST_ASSERT_TRUE(board.pumpPort.enable);
+  TEST_ASSERT_TRUE(board.pumpPort.runningLamp);
+  TEST_ASSERT_FALSE(board.pumpPort.warningLamp);
+}
+
+/**
  * Runs the module-link desktop tests.
  *
  * @return Unity result.
@@ -456,5 +677,15 @@ int main()
   RUN_TEST(testSetAddressRejectsBadCrcAndIllegalAddresses);
   RUN_TEST(testUnknownCommandAndMalformedFrames);
   RUN_TEST(testEnumerationSequence);
+  RUN_TEST(testGetPumpStateWhenOff);
+  RUN_TEST(testGetPumpStateRejectsPayload);
+  RUN_TEST(testSetPumpOnAndOff);
+  RUN_TEST(testSetPumpRejectsBadPayload);
+  RUN_TEST(testSetPumpWhileFaultedStaysFault);
+  RUN_TEST(testResetClearsFault);
+  RUN_TEST(testResetRejectsPayload);
+  RUN_TEST(testStartTimeoutReportsFault);
+  RUN_TEST(testRunningReportsOnAndGreen);
+  runPumpTests();
   return UNITY_END();
 }

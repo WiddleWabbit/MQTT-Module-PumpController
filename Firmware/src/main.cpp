@@ -1,8 +1,10 @@
 #include <Arduino.h>
 
+#include "AvrPumpPort.h"
 #include "AvrTwi0Slave.h"
 #include "ModuleLink.h"
 #include "ModuleProtocol.h"
+#include "Pump.h"
 
 
 // ========== Board pins ==========
@@ -44,37 +46,32 @@ static_assert(PMP_STATUS_PIN == 7, "PB0 is pump status.");
 const uint16_t MODULE_TYPE = module_protocol::kTypePumpModule;
 const uint16_t FIRMWARE_VERSION = 1;
 
+// How long nPGD may stay high before a fault. Past the LM5060
+// timers on this board: startup about 157 ms, transition about
+// 72 ms, overcurrent about 85 ms.
+const uint32_t PUMP_STATUS_LIMIT_MS = 300;
+
 
 // ========== Modules ==========
 
 AvrTwi0Slave moduleSlave(SDA_PIN, SCL_PIN);
-ModuleLink moduleLink(moduleSlave, MODULE_TYPE, FIRMWARE_VERSION);
+AvrPumpPort pumpPort(PMP_EN_PIN, PMP_STATUS_PIN, P_ON_PIN, P_WARN_PIN);
+Pump pump(pumpPort, PUMP_STATUS_LIMIT_MS);
+ModuleLink moduleLink(moduleSlave, pump, MODULE_TYPE, FIRMWARE_VERSION);
 
 
 // ========== Application ==========
 
 /**
- * Drives SNS low so the motherboard sees this module seated, and holds
- * MOD as an input with pull-up. The pump enable stays low. Both LEDs
- * light for one second at boot, then stay low. Delete that pause once
- * the LEDs are confirmed. The slave stays off until MOD is low.
+ * Drives the pump idle, then SNS low so the motherboard sees this
+ * module seated, and holds MOD as an input with pull-up. Enable and
+ * both lamps are low. The slave stays off until MOD is low.
  *
  * @return Nothing.
  */
 void setup()
 {
-  digitalWrite(PMP_EN_PIN, LOW);
-  pinMode(PMP_EN_PIN, OUTPUT);
-
-  // TEMP: both LEDs on for 1 s at boot. Delete this block once the
-  // LEDs are confirmed. SNS stays high-Z until after this.
-  digitalWrite(P_ON_PIN, HIGH);
-  digitalWrite(P_WARN_PIN, HIGH);
-  pinMode(P_ON_PIN, OUTPUT);
-  pinMode(P_WARN_PIN, OUTPUT);
-  delay(1000);
-  digitalWrite(P_ON_PIN, LOW);
-  digitalWrite(P_WARN_PIN, LOW);
+  pumpPort.begin();
 
   pinMode(SNS_PIN, OUTPUT);
   digitalWrite(SNS_PIN, LOW);
@@ -82,14 +79,20 @@ void setup()
 }
 
 /**
- * Gates the unconfigured address on MOD. A low MOD enables 0x0A.
- * After SET_ADDRESS the link keeps that address. This loop does not
- * block, so the host's 5 ms MOD gate is met.
+ * Samples the pump, then gates the unconfigured address on MOD.
+ * A low MOD enables 0x0A. After SET_ADDRESS the link keeps that
+ * address. Pump commands run from the TWI interrupt, so the sample
+ * runs with interrupts off. This loop does not block, so the host's
+ * 5 ms MOD gate is met.
  *
  * @return Nothing.
  */
 void loop()
 {
+  noInterrupts();
+  pump.update(millis());
+  interrupts();
+
   const bool modIsLow = digitalRead(MOD_PIN) == LOW;
   moduleLink.update(modIsLow);
 }

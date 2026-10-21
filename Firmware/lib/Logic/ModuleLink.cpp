@@ -6,16 +6,18 @@
 // ========== Construction ==========
 
 /**
- * Binds the slave port and registers this link as the master-write
- * handler. The slave stays disabled until update().
+ * Binds the slave port and the pump, and registers this link as
+ * the master-write handler. The slave stays disabled until update().
  *
  * @param port Port that enables TWI and stores replies.
+ * @param pump Pump commanded by GET, SET, and RESET.
  * @param typeId Module type reported by GET_IDENTITY.
  * @param firmwareVersion Firmware version reported by GET_IDENTITY.
  */
-ModuleLink::ModuleLink(IModuleSlavePort& port, uint16_t typeId,
+ModuleLink::ModuleLink(IModuleSlavePort& port, Pump& pump, uint16_t typeId,
                        uint16_t firmwareVersion)
   : _port(port),
+    _pump(pump),
     _typeId(typeId),
     _firmwareVersion(firmwareVersion),
     _address(module_protocol::kUnconfiguredAddress),
@@ -164,6 +166,47 @@ void ModuleLink::_handleCommand(uint8_t command, const uint8_t* payload,
       }
       return;
 
+    case module_protocol::kCmdGetPumpState:
+      if (payloadLen != 0)
+      {
+        _replyStatus(module_protocol::kStatusBadLength);
+        return;
+      }
+      _replyPumpState();
+      return;
+
+    case module_protocol::kCmdSetPump:
+      if (payloadLen != module_protocol::kPumpSetPayloadLen)
+      {
+        _replyStatus(module_protocol::kStatusBadLength);
+        return;
+      }
+      if (payload[0] == module_protocol::kPumpStateOff)
+      {
+        _pump.turnOff();
+      }
+      else if (payload[0] == module_protocol::kPumpStateOn)
+      {
+        _pump.turnOn();
+      }
+      else
+      {
+        _replyStatus(module_protocol::kStatusBadLength);
+        return;
+      }
+      _replyPumpState();
+      return;
+
+    case module_protocol::kCmdResetPump:
+      if (payloadLen != 0)
+      {
+        _replyStatus(module_protocol::kStatusBadLength);
+        return;
+      }
+      _pump.reset();
+      _replyPumpState();
+      return;
+
     case module_protocol::kCmdSetAddress:
       if (payloadLen != module_protocol::kSetAddressPayloadLen)
       {
@@ -195,6 +238,18 @@ void ModuleLink::_handleCommand(uint8_t command, const uint8_t* payload,
 void ModuleLink::_replyStatus(uint8_t status)
 {
   _replyPayload(status, nullptr, 0);
+}
+
+/**
+ * Queues an Ok reply whose payload is the current pump state.
+ *
+ * @return Nothing.
+ */
+void ModuleLink::_replyPumpState()
+{
+  const uint8_t state = _pump.state();
+  _replyPayload(module_protocol::kStatusOk, &state,
+                module_protocol::kPumpStatePayloadLen);
 }
 
 /**
