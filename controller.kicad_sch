@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Controller")
-		(date "2026-10-20")
+		(date "2026-10-22")
 		(rev "1.1")
 	)
 	(lib_symbols
@@ -2517,8 +2517,8 @@
 	(bus_alias "PMP"
 		(members "PMP_Status" "PMP_EN")
 	)
-	(bus_alias "UDPI"
-		(members "VCC" "GND" "UDPI_C")
+	(bus_alias "UPDI"
+		(members "UPDI_C")
 	)
 	(text_box "Cap to debounce, 10k for pulling up."
 		(exclude_from_sim no)
@@ -2772,24 +2772,6 @@
 		(uuid "68aea89a-8db2-4c19-ba48-34b831691942")
 	)
 	(bus_entry
-		(at 256.54 71.12)
-		(size -2.54 2.54)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "79aa99f5-43a0-45ac-a94f-aa7cca43ee9d")
-	)
-	(bus_entry
-		(at 256.54 76.2)
-		(size -2.54 2.54)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7bb4c875-37d9-45e2-a623-45ea1e63e5eb")
-	)
-	(bus_entry
 		(at 67.31 156.21)
 		(size -2.54 2.54)
 		(stroke
@@ -2908,16 +2890,6 @@
 		)
 		(uuid "39461d99-e022-40b0-a94c-ab5265d3c145")
 	)
-	(bus
-		(pts
-			(xy 256.54 71.12) (xy 256.54 73.66)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "39875106-d2a6-4e89-99bf-4b19a3422dab")
-	)
 	(wire
 		(pts
 			(xy 229.87 101.6) (xy 254 101.6)
@@ -2930,7 +2902,7 @@
 	)
 	(bus
 		(pts
-			(xy 256.54 67.31) (xy 256.54 71.12)
+			(xy 256.54 67.31) (xy 256.54 73.66)
 		)
 		(stroke
 			(width 0)
@@ -3260,16 +3232,6 @@
 	)
 	(wire
 		(pts
-			(xy 246.38 73.66) (xy 254 73.66)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "cb8af343-107c-41c9-b3a7-0b1fe80a0505")
-	)
-	(wire
-		(pts
 			(xy 130.81 83.82) (xy 140.97 83.82)
 		)
 		(stroke
@@ -3328,16 +3290,6 @@
 		)
 		(uuid "dec31293-3fc2-4ca4-a82d-d4f6721ba50f")
 	)
-	(bus
-		(pts
-			(xy 256.54 73.66) (xy 256.54 76.2)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e1bb01d3-985c-4bb4-bb34-dd974e25ee04")
-	)
 	(wire
 		(pts
 			(xy 115.57 62.23) (xy 115.57 68.58)
@@ -3357,16 +3309,6 @@
 			(type default)
 		)
 		(uuid "ed3144a1-d03e-42a4-bb3f-3facd4b35466")
-	)
-	(wire
-		(pts
-			(xy 246.38 78.74) (xy 254 78.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f641ba40-c62c-4303-86a8-f72f43d88b65")
 	)
 	(wire
 		(pts
@@ -3438,17 +3380,7 @@
 		)
 		(uuid "0c5db40b-19b9-4024-b222-2edbcf47174f")
 	)
-	(label "+3V3"
-		(at 246.38 73.66 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "138a605b-841b-4c58-addb-6666c9f087b2")
-	)
-	(label "UDPI_C"
+	(label "UPDI_C"
 		(at 246.38 76.2 0)
 		(effects
 			(font
@@ -3588,16 +3520,6 @@
 		)
 		(uuid "bfa15a2f-b526-41b3-a4bb-868ac4dfe919")
 	)
-	(label "GND"
-		(at 246.38 78.74 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "c591eaee-031b-4b1d-96bc-e390aaec41c1")
-	)
 	(label "PMP_EN"
 		(at 85.09 78.74 0)
 		(effects
@@ -3668,7 +3590,7 @@
 		)
 		(uuid "f24ec042-3711-4fca-9fd8-d600308cf6ef")
 	)
-	(hierarchical_label "{UDPI}"
+	(hierarchical_label "{UPDI}"
 		(shape bidirectional)
 		(at 257.81 67.31 0)
 		(effects

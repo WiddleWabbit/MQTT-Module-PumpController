@@ -217,6 +217,16 @@
 	)
 	(bus
 		(pts
+			(xy 179.07 104.14) (xy 179.07 80.01)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "05d2a40d-72a8-4031-954b-a38f755fd871")
+	)
+	(bus
+		(pts
 			(xy 173.99 45.72) (xy 173.99 104.14)
 		)
 		(stroke
@@ -237,13 +247,13 @@
 	)
 	(bus
 		(pts
-			(xy 179.07 104.14) (xy 179.07 80.01)
+			(xy 179.07 80.01) (xy 182.88 80.01)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "21420118-9aec-43b9-be78-b0f8900e07d8")
+		(uuid "3c8771ef-541c-4843-b04e-fc5991322874")
 	)
 	(bus
 		(pts
@@ -274,16 +284,6 @@
 			(type default)
 		)
 		(uuid "b704ae0f-8dc1-4420-8c08-e3ab96b6f130")
-	)
-	(bus
-		(pts
-			(xy 179.07 80.01) (xy 182.88 80.01)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ca2859a9-be2f-41fe-b946-b85b6997ff40")
 	)
 	(bus
 		(pts
@@ -443,9 +443,9 @@
 				(justify right)
 			)
 		)
-		(pin "{UDPI}" input
+		(pin "{UPDI}" bidirectional
 			(at 179.07 104.14 90)
-			(uuid "39a60317-0213-481d-abbb-bef3ac40c6bf")
+			(uuid "779405ff-dbfb-4ed1-932a-8ecd95196cba")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -526,9 +526,9 @@
 				(justify left)
 			)
 		)
-		(pin "{UDPI}" bidirectional
+		(pin "{UPDI}" bidirectional
 			(at 182.88 80.01 180)
-			(uuid "fe93a447-0829-4510-b738-62c67db1bb06")
+			(uuid "4b413fdd-dd7c-430d-9f2f-2a0a8c111066")
 			(effects
 				(font
 					(size 1.27 1.27)
