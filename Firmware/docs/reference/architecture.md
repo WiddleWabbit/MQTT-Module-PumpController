@@ -57,6 +57,7 @@ Declared in `src/main.cpp`.
 | `MODULE_TYPE` | `kTypePumpModule` | | Reported by `GET_IDENTITY` |
 | `FIRMWARE_VERSION` | 1 | | Reported by `GET_IDENTITY` |
 | `PUMP_STATUS_LIMIT_MS` | 300 | | How long `nPGD` may stay high before a fault |
+| `PUMP_COMMAND_LIMIT_MS` | 180000 | | How long starting or on may continue after the last `SET_PUMP` on |
 
 `kTypePumpModule` is `0x0300` in `ModuleProtocol.h`. PA0 stays the UPDI
 pin.

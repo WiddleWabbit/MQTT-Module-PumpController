@@ -65,9 +65,9 @@ On the AVR the handler runs from the TWI interrupt. On the desktop,
 | `SET_ADDRESS` | enabled, not yet assigned, one payload byte, address `0x10`–`0x6F` | `setAddress`, no reply. Slot 1 is `03 03 10 F2` |
 | `SET_ADDRESS` | payload length is not 1 | `BadLength`, no commit |
 | `SET_ADDRESS` | disabled, already assigned, or address outside `0x10`–`0x6F` | no reply, no commit |
-| `GET_PUMP_STATE` | empty payload | `Ok` and one state byte. See the [pump reference](pump.md) |
+| `GET_PUMP_STATE` | empty payload | `Ok` and one state byte. See the [pump reference](pump.md). This read does not refresh the on-command age |
 | `GET_PUMP_STATE` | any payload | `BadLength`. The pump is unchanged |
-| `SET_PUMP` | one byte, `0` or `1` | `Ok` and the state byte. Off turns the switch off. On turns it on. A fault stays faulted |
+| `SET_PUMP` | one byte, `0` or `1` | `Ok` and the state byte. Off turns the switch off. On turns it on. A further on while starting or on leaves enable high and refreshes the on-command age. A fault stays faulted |
 | `SET_PUMP` | empty, two bytes, or a byte other than `0` or `1` | `BadLength`. The pump is unchanged |
 | `RESET_PUMP` | empty payload | clears a fault and turns the switch off. `Ok` and the state byte |
 | `RESET_PUMP` | any payload | `BadLength`. The pump is unchanged |
@@ -129,6 +129,8 @@ values it was given.
 | `testResetRejectsPayload` | A payload is `BadLength` and the fault stays |
 | `testStartTimeoutReportsFault` | `GET` during the window is on. After the limit it is fault, yellow on |
 | `testRunningReportsOnAndGreen` | `SET` on with `nPGD` low reports on and lights green |
+| `testRepeatedSetOnRefreshesCommandAge` | A second `SET` on does not call `setEnable`. The pump stays on until the command age after that second command |
+| `testPollAndResetDoNotRefreshCommandAge` | `PING` and `GET_PUMP_STATE` leave the command age on the last `SET` on. `RESET` from on returns off |
 
 Pump state-machine cases are on the [pump reference](pump.md).
 `test_module_link.cpp` calls `runPumpTests()`.

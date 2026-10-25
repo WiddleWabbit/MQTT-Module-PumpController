@@ -12,6 +12,7 @@ public:
   bool runningLamp = false;
   bool warningLamp = false;
   bool statusLow = false;
+  uint32_t enableWrites = 0;
 
   /**
    * Records the enable level.
@@ -22,6 +23,7 @@ public:
   void setEnable(bool on) override
   {
     enable = on;
+    enableWrites = enableWrites + 1;
   }
 
   /**

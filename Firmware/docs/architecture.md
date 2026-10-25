@@ -34,8 +34,8 @@ main.cpp
 ```
 
 `main.cpp` passes `MODULE_TYPE` and `FIRMWARE_VERSION` into the link,
-passes the pump into the link, and passes `PUMP_STATUS_LIMIT_MS` into
-the pump. Pin numbers stay in `main.cpp`.
+passes the pump into the link, and passes `PUMP_STATUS_LIMIT_MS` and
+`PUMP_COMMAND_LIMIT_MS` into the pump. Pin numbers stay in `main.cpp`.
 
 `lib/Interfaces/` holds `IModuleSlavePort`, `IPumpPort`, and the copied
 `ModuleProtocol.h`. `lib/Drivers/` holds the AVR adapters. `lib/Logic/`
@@ -69,7 +69,8 @@ Each pass reads `MOD_PIN` and passes that level to the link. The pump
 reads `nPGD` on its own port. The motherboard reads the sense line,
 which `SNS_PIN` holds low.
 
-The pump stores its phase and the start of the `nPGD` window. The link
+The pump stores its phase, the start of the `nPGD` window, and the
+time of the last on command. The link
 stores the address and whether it has been assigned. The TWI0 adapter
 stores the reply the host clocks out. Those stores are on the
 [pump](pump.md), [module link](module-link.md), and

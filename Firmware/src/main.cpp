@@ -51,12 +51,16 @@ const uint16_t FIRMWARE_VERSION = 1;
 // 72 ms, overcurrent about 85 ms.
 const uint32_t PUMP_STATUS_LIMIT_MS = 300;
 
+// How long starting or on may continue after the last SET_PUMP on.
+// The motherboard repeats that command about once a minute.
+const uint32_t PUMP_COMMAND_LIMIT_MS = 3UL * 60UL * 1000UL;
+
 
 // ========== Modules ==========
 
 AvrTwi0Slave moduleSlave(SDA_PIN, SCL_PIN);
 AvrPumpPort pumpPort(PMP_EN_PIN, PMP_STATUS_PIN, P_ON_PIN, P_WARN_PIN);
-Pump pump(pumpPort, PUMP_STATUS_LIMIT_MS);
+Pump pump(pumpPort, PUMP_STATUS_LIMIT_MS, PUMP_COMMAND_LIMIT_MS);
 ModuleLink moduleLink(moduleSlave, pump, MODULE_TYPE, FIRMWARE_VERSION);
 
 
@@ -82,8 +86,8 @@ void setup()
  * Samples the pump, then gates the unconfigured address on MOD.
  * A low MOD enables 0x0A. After SET_ADDRESS the link keeps that
  * address. Pump commands run from the TWI interrupt, so the sample
- * runs with interrupts off. This loop does not block, so the host's
- * 5 ms MOD gate is met.
+ * runs with interrupts off. The sample also applies the on-command
+ * age. This loop does not block, so the host's 5 ms MOD gate is met.
  *
  * @return Nothing.
  */

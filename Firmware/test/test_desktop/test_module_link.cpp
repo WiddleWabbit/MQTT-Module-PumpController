@@ -19,6 +19,7 @@ namespace
 constexpr uint16_t kTestType = module_protocol::kTypePumpModule;
 constexpr uint16_t kTestFirmwareVersion = 1;
 constexpr uint32_t kStatusLimitMs = 300;
+constexpr uint32_t kCommandLimitMs = 3UL * 60UL * 1000UL;
 
 /**
  * One link, its slave fake, and the pump the link commands.
@@ -35,10 +36,12 @@ struct Board
    *
    * @param typeId Type id supplied to the link.
    * @param firmwareVersion Firmware version supplied to the link.
+   * @param commandLimitMs On-command age passed to the pump.
    */
   explicit Board(uint16_t typeId = kTestType,
-                 uint16_t firmwareVersion = kTestFirmwareVersion)
-    : pump(pumpPort, kStatusLimitMs),
+                 uint16_t firmwareVersion = kTestFirmwareVersion,
+                 uint32_t commandLimitMs = kCommandLimitMs)
+    : pump(pumpPort, kStatusLimitMs, commandLimitMs),
       link(port, pump, typeId, firmwareVersion)
   {
   }
@@ -659,6 +662,87 @@ void testRunningReportsOnAndGreen()
 }
 
 /**
+ * A second SET on leaves enable high, does not call setEnable
+ * again, and moves the on-command age to that command.
+ *
+ * @return Nothing.
+ */
+void testRepeatedSetOnRefreshesCommandAge()
+{
+  constexpr uint32_t kShortMs = 1000;
+  Board board(kTestType, kTestFirmwareVersion, kShortMs);
+  board.pump.update(0);
+  board.pumpPort.statusLow = true;
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t off = module_protocol::kPumpStateOff;
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  expectReply(board.port, module_protocol::kStatusOk, &on, 1);
+  const uint32_t writes = board.pumpPort.enableWrites;
+
+  board.pump.update(600);
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  expectReply(board.port, module_protocol::kStatusOk, &on, 1);
+
+  TEST_ASSERT_EQUAL_UINT32(writes, board.pumpPort.enableWrites);
+  TEST_ASSERT_TRUE(board.pumpPort.enable);
+  TEST_ASSERT_TRUE(board.pumpPort.runningLamp);
+
+  board.pump.update(600 + kShortMs - 1);
+  TEST_ASSERT_EQUAL_UINT8(on, board.pump.state());
+  TEST_ASSERT_TRUE(board.pumpPort.enable);
+
+  board.pump.update(600 + kShortMs);
+  TEST_ASSERT_EQUAL_UINT8(off, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_FALSE(board.pumpPort.runningLamp);
+}
+
+/**
+ * PING and GET_PUMP_STATE leave the on-command age on the last
+ * SET on. RESET from on turns the pump off.
+ *
+ * @return Nothing.
+ */
+void testPollAndResetDoNotRefreshCommandAge()
+{
+  constexpr uint32_t kShortMs = 1000;
+  Board board(kTestType, kTestFirmwareVersion, kShortMs);
+  board.pump.update(0);
+  board.pumpPort.statusLow = true;
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t off = module_protocol::kPumpStateOff;
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(400);
+  writeCommand(board.port, module_protocol::kCmdPing, nullptr, 0);
+  board.pump.update(700);
+  writeCommand(board.port, module_protocol::kCmdGetPumpState, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, &on, 1);
+
+  board.pump.update(kShortMs - 1);
+  TEST_ASSERT_EQUAL_UINT8(on, board.pump.state());
+  TEST_ASSERT_TRUE(board.pumpPort.enable);
+
+  board.pump.update(kShortMs);
+  TEST_ASSERT_EQUAL_UINT8(off, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+
+  board.pump.update(0);
+  board.pumpPort.statusLow = true;
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(500);
+  writeCommand(board.port, module_protocol::kCmdResetPump, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, &off, 1);
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+  TEST_ASSERT_FALSE(board.pumpPort.runningLamp);
+
+  board.pump.update(500 + kShortMs - 1);
+  TEST_ASSERT_EQUAL_UINT8(off, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+}
+
+/**
  * Runs the module-link desktop tests.
  *
  * @return Unity result.
@@ -686,6 +770,8 @@ int main()
   RUN_TEST(testResetRejectsPayload);
   RUN_TEST(testStartTimeoutReportsFault);
   RUN_TEST(testRunningReportsOnAndGreen);
+  RUN_TEST(testRepeatedSetOnRefreshesCommandAge);
+  RUN_TEST(testPollAndResetDoNotRefreshCommandAge);
   runPumpTests();
   return UNITY_END();
 }

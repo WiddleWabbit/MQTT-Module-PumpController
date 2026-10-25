@@ -8,6 +8,7 @@ namespace
 {
 
 constexpr uint32_t kLimitMs = 300;
+constexpr uint32_t kCommandLimitMs = 3UL * 60UL * 1000UL;
 
 /**
  * One pump and the port it drives.
@@ -18,12 +19,14 @@ struct Rig
   Pump pump;
 
   /**
-   * Builds a pump with the given high-nPGD limit.
+   * Builds a pump with the given nPGD and on-command limits.
    *
-   * @param limitMs Window passed to the pump.
+   * @param limitMs High-nPGD window passed to the pump.
+   * @param commandLimitMs On-command age passed to the pump.
    */
-  explicit Rig(uint32_t limitMs = kLimitMs)
-    : pump(port, limitMs)
+  explicit Rig(uint32_t limitMs = kLimitMs,
+               uint32_t commandLimitMs = kCommandLimitMs)
+    : pump(port, limitMs, commandLimitMs)
   {
   }
 };
@@ -381,6 +384,215 @@ void testStatusLimitIsTheConstructorArgument()
 }
 
 /**
+ * One millisecond before the on-command age the pump stays on.
+ * The age instant turns it off. A later high stays off.
+ *
+ * @return Nothing.
+ */
+void testCommandAgeBoundary()
+{
+  Rig rig;
+  rig.pump.update(0);
+  rig.port.statusLow = true;
+  rig.pump.turnOn();
+  expectRunning(rig);
+
+  rig.pump.update(kCommandLimitMs - 1);
+  expectRunning(rig);
+  rig.pump.update(kCommandLimitMs);
+  expectIdle(rig);
+
+  rig.port.statusLow = false;
+  rig.pump.update(kCommandLimitMs + 1000);
+  expectIdle(rig);
+}
+
+/**
+ * A later turnOn moves the age and does not rewrite enable.
+ * The pump stays on until that later stamp is commandLimitMs old.
+ *
+ * @return Nothing.
+ */
+void testRepeatedOnExtendsCommandAge()
+{
+  Rig rig;
+  rig.pump.update(0);
+  rig.port.statusLow = true;
+  rig.pump.turnOn();
+  const uint32_t writes = rig.port.enableWrites;
+
+  rig.pump.update(60000);
+  rig.pump.turnOn();
+  rig.pump.update(120000);
+  rig.pump.turnOn();
+
+  TEST_ASSERT_EQUAL_UINT32(writes, rig.port.enableWrites);
+  rig.pump.update(120000 + kCommandLimitMs - 1);
+  expectRunning(rig);
+  rig.pump.update(120000 + kCommandLimitMs);
+  expectIdle(rig);
+}
+
+/**
+ * A second turnOn while starting leaves enable high and does not
+ * call setEnable again.
+ *
+ * @return Nothing.
+ */
+void testRepeatedOnWhileStartingLeavesEnableHigh()
+{
+  Rig rig;
+  rig.pump.update(1000);
+  rig.pump.turnOn();
+  const uint32_t writes = rig.port.enableWrites;
+  expectStarting(rig);
+
+  rig.pump.turnOn();
+
+  TEST_ASSERT_EQUAL_UINT32(writes, rig.port.enableWrites);
+  expectStarting(rig);
+}
+
+/**
+ * The on-command age is the constructor argument.
+ *
+ * @return Nothing.
+ */
+void testCommandLimitIsTheConstructorArgument()
+{
+  constexpr uint32_t kShortMs = 1000;
+  Rig rig(kLimitMs, kShortMs);
+  rig.pump.update(10);
+  rig.port.statusLow = true;
+  rig.pump.turnOn();
+
+  rig.pump.update(10 + kShortMs - 1);
+  expectRunning(rig);
+  rig.pump.update(10 + kShortMs);
+  expectIdle(rig);
+}
+
+/**
+ * Starting turns off when the on command ages out before nPGD
+ * has been high for the status limit.
+ *
+ * @return Nothing.
+ */
+void testCommandAgeWhileStartingTurnsOff()
+{
+  constexpr uint32_t kShortMs = 100;
+  Rig rig(kLimitMs, kShortMs);
+  rig.pump.update(0);
+  rig.pump.turnOn();
+
+  rig.pump.update(kShortMs - 1);
+  expectStarting(rig);
+  rig.pump.update(kShortMs);
+  expectIdle(rig);
+}
+
+/**
+ * nPGD falling does not move the on-command age. The age still
+ * runs from the turnOn that started the pump.
+ *
+ * @return Nothing.
+ */
+void testStatusLowDoesNotRefreshCommandAge()
+{
+  constexpr uint32_t kShortMs = 1000;
+  Rig rig(kLimitMs, kShortMs);
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  expectStarting(rig);
+
+  rig.port.statusLow = true;
+  rig.pump.update(500);
+  expectRunning(rig);
+  rig.pump.update(kShortMs - 1);
+  expectRunning(rig);
+  rig.pump.update(kShortMs);
+  expectIdle(rig);
+}
+
+/**
+ * When the status limit and the on-command age elapse on the same
+ * sample, the high nPGD stays a fault.
+ *
+ * @return Nothing.
+ */
+void testStatusFaultWinsOnTheSharedInstant()
+{
+  constexpr uint32_t kSharedMs = 100;
+  Rig rig(kSharedMs, kSharedMs);
+  rig.pump.update(0);
+  rig.pump.turnOn();
+
+  rig.pump.update(kSharedMs);
+
+  expectFault(rig);
+}
+
+/**
+ * A fault stays latched across the on-command age. turnOn is still
+ * ignored until reset.
+ *
+ * @return Nothing.
+ */
+void testCommandAgeLeavesFaultLatched()
+{
+  Rig rig;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(kLimitMs);
+  expectFault(rig);
+
+  rig.pump.update(kCommandLimitMs + 1000);
+  expectFault(rig);
+  rig.pump.turnOn();
+  expectFault(rig);
+}
+
+/**
+ * The on-command age uses unsigned subtraction across the
+ * millisecond wrap.
+ *
+ * @return Nothing.
+ */
+void testCommandAgeUsesUnsignedWrap()
+{
+  constexpr uint32_t kStart = 0xFFFFFFA0;
+  constexpr uint32_t kShortMs = 100;
+  Rig rig(kLimitMs, kShortMs);
+  rig.pump.update(kStart);
+  rig.port.statusLow = true;
+  rig.pump.turnOn();
+
+  rig.pump.update(kStart + kShortMs - 1);
+  expectRunning(rig);
+  rig.pump.update(kStart + kShortMs);
+  expectIdle(rig);
+}
+
+/**
+ * After the on-command age turns the pump off, turnOn is accepted.
+ *
+ * @return Nothing.
+ */
+void testTurnOnAfterCommandAge()
+{
+  constexpr uint32_t kShortMs = 1000;
+  Rig rig(kLimitMs, kShortMs);
+  rig.pump.update(0);
+  rig.port.statusLow = true;
+  rig.pump.turnOn();
+  rig.pump.update(kShortMs);
+  expectIdle(rig);
+
+  rig.pump.turnOn();
+  expectRunning(rig);
+}
+
+/**
  * Runs the pump state-machine tests. The desktop main() calls this.
  *
  * @return Nothing.
@@ -401,4 +613,14 @@ void runPumpTests()
   RUN_TEST(testResetFromFaultOnAndOff);
   RUN_TEST(testLimitUsesUnsignedWrap);
   RUN_TEST(testStatusLimitIsTheConstructorArgument);
+  RUN_TEST(testCommandAgeBoundary);
+  RUN_TEST(testRepeatedOnExtendsCommandAge);
+  RUN_TEST(testRepeatedOnWhileStartingLeavesEnableHigh);
+  RUN_TEST(testCommandLimitIsTheConstructorArgument);
+  RUN_TEST(testCommandAgeWhileStartingTurnsOff);
+  RUN_TEST(testStatusLowDoesNotRefreshCommandAge);
+  RUN_TEST(testStatusFaultWinsOnTheSharedInstant);
+  RUN_TEST(testCommandAgeLeavesFaultLatched);
+  RUN_TEST(testCommandAgeUsesUnsignedWrap);
+  RUN_TEST(testTurnOnAfterCommandAge);
 }

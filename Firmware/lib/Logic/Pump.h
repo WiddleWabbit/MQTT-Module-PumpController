@@ -9,6 +9,8 @@
  * A high while enable is high is still starting, or a fault once it
  * has lasted statusLimitMs. A fault stays latched until reset().
  * Starting is reported as on. The green lamp waits for nPGD low.
+ * An on command while starting or on records the command time.
+ * update turns the switch off when that time is commandLimitMs old.
  * No Arduino types.
  *
  * turnOn, turnOff, reset, and state may run from the TWI interrupt.
@@ -22,17 +24,22 @@ public:
    * not touch the pins, because globals run before the chip is
    * ready. setup() drives that idle level through the port.
    * statusLimitMs is how long nPGD may stay high before a fault.
-   * The sketch passes PUMP_STATUS_LIMIT_MS.
+   * commandLimitMs is how long starting or on may continue after
+   * the last on command. The sketch passes PUMP_STATUS_LIMIT_MS
+   * and PUMP_COMMAND_LIMIT_MS.
    *
    * @param port Enable, nPGD, and the two lamps.
    * @param statusLimitMs High-nPGD window, in milliseconds.
+   * @param commandLimitMs On-command age, in milliseconds.
    */
-  explicit Pump(IPumpPort& port, uint32_t statusLimitMs);
+  explicit Pump(IPumpPort& port, uint32_t statusLimitMs,
+                uint32_t commandLimitMs);
 
   /**
-   * Samples nPGD while the switch is commanded on and latches a
-   * fault when the high window elapses. The caller must not run
-   * this concurrently with turnOn, turnOff, or reset.
+   * Samples nPGD first. A status fault on this sample stays latched.
+   * Then turns the switch off when the last on command is
+   * commandLimitMs old. The caller must not run this concurrently
+   * with turnOn, turnOff, or reset.
    *
    * @param nowMs Milliseconds from the same clock as the last call.
    *        Unsigned wrap is valid.
@@ -48,8 +55,9 @@ public:
   uint8_t state() const;
 
   /**
-   * Turns the switch on from off. Ignored while faulted, starting,
-   * or already on, so a second command does not restart the window.
+   * Turns the switch on from off. While starting or on, records the
+   * command time and leaves enable and the nPGD window alone.
+   * Ignored while faulted.
    *
    * @return Nothing.
    */
@@ -79,6 +87,21 @@ private:
     On,
     Fault
   };
+
+  /**
+   * Records the on command at the last update time.
+   *
+   * @return Nothing.
+   */
+  void _noteOn();
+
+  /**
+   * Turns the switch off when the on command is older than the
+   * command limit. Off and fault are left as they are.
+   *
+   * @return Nothing.
+   */
+  void _applyCommandAge();
 
   /**
    * Moves to off, enable low, both lamps off.
@@ -134,8 +157,10 @@ private:
 
   IPumpPort& _port;
   uint32_t _statusLimitMs;
+  uint32_t _commandLimitMs;
   volatile uint32_t _nowMs;
   volatile uint32_t _windowStartedAt;
+  volatile uint32_t _lastOnMs;
   volatile Phase _phase;
   volatile bool _highWindowArmed;
 };
