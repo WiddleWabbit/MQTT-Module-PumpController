@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "MQTT - Pump Controller - Module")
-		(date "2026-08-12")
-		(rev "1.0")
+		(date "2026-10-28")
+		(rev "1.1")
 	)
 	(lib_symbols)
 	(bus_alias "I2C"
@@ -123,7 +123,7 @@
 		)
 		(uuid "44c57b02-95c9-405d-94f2-fd948a8ea3ef")
 	)
-	(text_box "Page 2: Controller\nPage 3: Headers\nPage 4: Pump Controller"
+	(text_box "Page 2: Controller\nPage 3: Headers\nPage 4: Pump Controller\nPage 5: Pump Sensing"
 		(exclude_from_sim no)
 		(at 20.32 68.58 0)
 		(size 85.09 19.05)
@@ -207,7 +207,7 @@
 	)
 	(bus
 		(pts
-			(xy 229.87 73.66) (xy 220.98 73.66)
+			(xy 207.01 73.66) (xy 199.39 73.66)
 		)
 		(stroke
 			(width 0)
@@ -217,7 +217,7 @@
 	)
 	(bus
 		(pts
-			(xy 179.07 104.14) (xy 179.07 80.01)
+			(xy 157.48 104.14) (xy 157.48 81.28)
 		)
 		(stroke
 			(width 0)
@@ -227,17 +227,7 @@
 	)
 	(bus
 		(pts
-			(xy 173.99 45.72) (xy 173.99 104.14)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0a63b72a-e2ad-4490-b6e9-21b18a35d2d4")
-	)
-	(bus
-		(pts
-			(xy 224.79 80.01) (xy 224.79 104.14)
+			(xy 203.2 81.28) (xy 203.2 104.14)
 		)
 		(stroke
 			(width 0)
@@ -247,7 +237,27 @@
 	)
 	(bus
 		(pts
-			(xy 179.07 80.01) (xy 182.88 80.01)
+			(xy 199.39 50.8) (xy 210.82 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1d398d06-05c1-48e5-a082-96e76574aa66")
+	)
+	(bus
+		(pts
+			(xy 205.74 30.48) (xy 151.13 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2116fa73-1099-422c-85cc-312f54c1e05f")
+	)
+	(bus
+		(pts
+			(xy 157.48 81.28) (xy 161.29 81.28)
 		)
 		(stroke
 			(width 0)
@@ -257,7 +267,27 @@
 	)
 	(bus
 		(pts
-			(xy 179.07 50.8) (xy 179.07 73.66)
+			(xy 223.52 43.18) (xy 205.74 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4704aee2-a91f-49e3-ba60-ecb560b41b4d")
+	)
+	(bus
+		(pts
+			(xy 214.63 50.8) (xy 223.52 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5ed4b421-95bb-4314-bfbf-92d0a5e80ca9")
+	)
+	(bus
+		(pts
+			(xy 157.48 50.8) (xy 157.48 73.66)
 		)
 		(stroke
 			(width 0)
@@ -267,7 +297,47 @@
 	)
 	(bus
 		(pts
-			(xy 220.98 80.01) (xy 224.79 80.01)
+			(xy 199.39 46.99) (xy 223.52 46.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9569b009-cdef-4890-bded-5825fc9ffb90")
+	)
+	(bus
+		(pts
+			(xy 210.82 50.8) (xy 210.82 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "995b8226-41b8-462c-b825-cb459b924f6e")
+	)
+	(bus
+		(pts
+			(xy 205.74 43.18) (xy 205.74 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9d6f4178-ce64-4da1-9cee-c625be1c3e07")
+	)
+	(bus
+		(pts
+			(xy 151.13 30.48) (xy 151.13 77.47)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a0f6fea6-3213-4e8b-b919-8433259a1c4a")
+	)
+	(bus
+		(pts
+			(xy 199.39 81.28) (xy 203.2 81.28)
 		)
 		(stroke
 			(width 0)
@@ -277,7 +347,7 @@
 	)
 	(bus
 		(pts
-			(xy 229.87 104.14) (xy 229.87 73.66)
+			(xy 207.01 104.14) (xy 207.01 73.66)
 		)
 		(stroke
 			(width 0)
@@ -287,17 +357,27 @@
 	)
 	(bus
 		(pts
-			(xy 182.88 45.72) (xy 173.99 45.72)
+			(xy 161.29 77.47) (xy 151.13 77.47)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "e0c28246-b287-4382-8952-fa89a5365dae")
+		(uuid "d333f434-0fe5-4d63-b6ec-ac9d26ab4e08")
 	)
 	(bus
 		(pts
-			(xy 179.07 73.66) (xy 182.88 73.66)
+			(xy 214.63 104.14) (xy 214.63 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "df3fa285-38de-40d5-90ea-0f1de43defb7")
+	)
+	(bus
+		(pts
+			(xy 157.48 73.66) (xy 161.29 73.66)
 		)
 		(stroke
 			(width 0)
@@ -307,7 +387,7 @@
 	)
 	(bus
 		(pts
-			(xy 182.88 50.8) (xy 179.07 50.8)
+			(xy 161.29 50.8) (xy 157.48 50.8)
 		)
 		(stroke
 			(width 0)
@@ -316,7 +396,7 @@
 		(uuid "fae2bb5c-5713-4e55-b072-704f63cc1c6d")
 	)
 	(sheet
-		(at 182.88 38.1)
+		(at 161.29 38.1)
 		(size 38.1 19.05)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -331,7 +411,7 @@
 		)
 		(uuid "3f396550-8e50-448c-b09c-e7e2a4727b8c")
 		(property "Sheetname" "Pump Controller"
-			(at 189.484 37.338 0)
+			(at 167.894 37.338 0)
 			(effects
 				(font
 					(size 1.9 1.9)
@@ -342,7 +422,7 @@
 			)
 		)
 		(property "Sheetfile" "pumpcontroller.kicad_sch"
-			(at 187.706 57.912 0)
+			(at 166.116 57.912 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -350,9 +430,9 @@
 				(justify left top)
 			)
 		)
-		(pin "{PMP_Terminals}" output
-			(at 182.88 45.72 180)
-			(uuid "921c2e3f-5534-4935-9cbf-f675ce5e77be")
+		(pin "{PMP}" bidirectional
+			(at 161.29 50.8 180)
+			(uuid "47d6ba44-aea0-4df4-80d5-b2e138825708")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -360,14 +440,24 @@
 				(justify left)
 			)
 		)
-		(pin "{PMP}" bidirectional
-			(at 182.88 50.8 180)
-			(uuid "47d6ba44-aea0-4df4-80d5-b2e138825708")
+		(pin "{PMP_Sense}" output
+			(at 199.39 46.99 0)
+			(uuid "1e316ad9-c6cf-4c28-aff0-5708f94fe86a")
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
+			)
+		)
+		(pin "{Pressure_Sensor}" input
+			(at 199.39 50.8 0)
+			(uuid "42f32af6-8a4d-4631-b3a7-9e6043e24bb5")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 			)
 		)
 		(instances
@@ -379,8 +469,8 @@
 		)
 	)
 	(sheet
-		(at 170.18 104.14)
-		(size 63.5 20.32)
+		(at 151.13 104.14)
+		(size 68.58 20.32)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -394,7 +484,7 @@
 		)
 		(uuid "5bb4b2fb-c117-403c-b2ae-c89cbb06dbb3")
 		(property "Sheetname" "Headers"
-			(at 195.58 102.87 0)
+			(at 176.53 102.87 0)
 			(effects
 				(font
 					(size 1.9 1.9)
@@ -405,7 +495,7 @@
 			)
 		)
 		(property "Sheetfile" "headers.kicad_sch"
-			(at 190.246 126.492 0)
+			(at 171.196 126.492 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -414,7 +504,7 @@
 			)
 		)
 		(pin "{GEN}" bidirectional
-			(at 229.87 104.14 90)
+			(at 207.01 104.14 90)
 			(uuid "ddbf2a00-6d2d-4c64-95bf-992fd39ab215")
 			(effects
 				(font
@@ -424,7 +514,7 @@
 			)
 		)
 		(pin "{I2C}" bidirectional
-			(at 224.79 104.14 90)
+			(at 203.2 104.14 90)
 			(uuid "413770fa-ea78-47d0-b00d-8627a35de0e0")
 			(effects
 				(font
@@ -434,7 +524,7 @@
 			)
 		)
 		(pin "{PMP_Terminals}" output
-			(at 173.99 104.14 90)
+			(at 214.63 104.14 90)
 			(uuid "73b5f5a8-4696-40b1-bbc7-e822715047de")
 			(effects
 				(font
@@ -444,8 +534,18 @@
 			)
 		)
 		(pin "{UPDI}" bidirectional
-			(at 179.07 104.14 90)
+			(at 157.48 104.14 90)
 			(uuid "779405ff-dbfb-4ed1-932a-8ecd95196cba")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "{Pressure_Sensor}" output
+			(at 210.82 104.14 90)
+			(uuid "c93907c9-28ab-4926-be20-4af281e28568")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -462,7 +562,80 @@
 		)
 	)
 	(sheet
-		(at 182.88 68.58)
+		(at 223.52 38.1)
+		(size 38.1 19.05)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "6aedaf70-0fe2-400a-9257-328e54d13de9")
+		(property "Sheetname" "Sensing"
+			(at 237.49 37.338 0)
+			(effects
+				(font
+					(size 1.9 1.9)
+					(thickness 0.38)
+					(bold yes)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "sensing.kicad_sch"
+			(at 231.902 57.912 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "{PMP_Sense}" input
+			(at 223.52 46.99 180)
+			(uuid "d16cc31e-6067-46ab-b39f-1ba82adb478c")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "{PMP_Terminals}" output
+			(at 223.52 50.8 180)
+			(uuid "20a82c44-a279-4583-ab06-4adb8e09f0e0")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "{SNS}" output
+			(at 223.52 43.18 180)
+			(uuid "c7d0bb00-bb93-41a1-b1db-e1d33a89b463")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 161.29 68.58)
 		(size 38.1 17.78)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -477,7 +650,7 @@
 		)
 		(uuid "aa87b2dd-90b3-41b3-8e99-8dcc5f11db59")
 		(property "Sheetname" "Controller"
-			(at 194.564 67.564 0)
+			(at 172.974 67.564 0)
 			(effects
 				(font
 					(size 1.9 1.9)
@@ -488,7 +661,7 @@
 			)
 		)
 		(property "Sheetfile" "controller.kicad_sch"
-			(at 190.5 88.138 0)
+			(at 168.91 88.138 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -497,7 +670,7 @@
 			)
 		)
 		(pin "{GEN}" bidirectional
-			(at 220.98 73.66 0)
+			(at 199.39 73.66 0)
 			(uuid "8c6122bc-cec8-4b0e-9daa-c0a780ff75f9")
 			(effects
 				(font
@@ -507,7 +680,7 @@
 			)
 		)
 		(pin "{I2C}" bidirectional
-			(at 220.98 80.01 0)
+			(at 199.39 81.28 0)
 			(uuid "eb1b1155-e274-4f64-b3c8-2b0c889d183d")
 			(effects
 				(font
@@ -517,7 +690,7 @@
 			)
 		)
 		(pin "{PMP}" bidirectional
-			(at 182.88 73.66 180)
+			(at 161.29 73.66 180)
 			(uuid "ab569c33-fdd3-4e4e-98a0-0ab4578463ae")
 			(effects
 				(font
@@ -527,8 +700,18 @@
 			)
 		)
 		(pin "{UPDI}" bidirectional
-			(at 182.88 80.01 180)
+			(at 161.29 81.28 180)
 			(uuid "4b413fdd-dd7c-430d-9f2f-2a0a8c111066")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "{SNS}" input
+			(at 161.29 77.47 180)
+			(uuid "01a63573-b11e-4798-9cfc-6f4c904e22a7")
 			(effects
 				(font
 					(size 1.27 1.27)

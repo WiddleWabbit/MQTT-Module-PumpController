@@ -6,39 +6,60 @@
 	(paper "A4")
 	(title_block
 		(title "Controller")
-		(date "2026-10-22")
+		(date "2026-10-28")
 		(rev "1.1")
 	)
 	(lib_symbols
-		(symbol "Connector:TestPoint"
+		(symbol "JLCPCB Basic:0805W8F1001T5E"
 			(pin_numbers
 				(hide yes)
 			)
 			(pin_names
-				(offset 0.762)
 				(hide yes)
 			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
-			(property "Reference" "TP"
-				(at 0 6.858 0)
+			(property "Reference" "R"
+				(at -2.032 6.604 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
+					(justify left top)
 				)
 			)
-			(property "Value" "TestPoint"
-				(at 0 5.08 0)
+			(property "Value" "1kΩ 1/8W 1%"
+				(at -2.032 4.572 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
+					(justify left top)
 				)
 			)
-			(property "Footprint" ""
-				(at 5.08 0 0)
+			(property "Footprint" "JLCPCB Basic:RESC2013X65N"
+				(at 13.97 -96.19 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 13.97 -196.19 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+					(hide yes)
+				)
+			)
+			(property "Description" "Resistor SMD 1kΩ 1/8W 1% 150V"
+				(at 5.08 -4.318 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -46,8 +67,38 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
-				(at 5.08 0 0)
+			(property "Height" "0.65"
+				(at 13.97 -396.19 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+					(hide yes)
+				)
+			)
+			(property "Manufacturer" "UNI-ROYAL(Uniroyal Elec)"
+				(at 13.97 -696.19 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+					(hide yes)
+				)
+			)
+			(property "Manufacturer Part No" "0805W8F1001T5E"
+				(at 13.97 -796.19 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+					(hide yes)
+				)
+			)
+			(property "Package" "0805"
+				(at 4.826 -6.604 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -55,8 +106,8 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "test point"
-				(at 0 0 0)
+			(property "JLCPCB Part #" "C17513"
+				(at 5.08 -9.144 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -64,8 +115,8 @@
 					(hide yes)
 				)
 			)
-			(property "ki_keywords" "test point tp"
-				(at 0 0 0)
+			(property "Part Type" "Basic"
+				(at 5.588 -11.176 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -73,31 +124,20 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "Pin* Test*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "TestPoint_0_1"
-				(circle
-					(center 0 3.302)
-					(radius 0.762)
+			(symbol "0805W8F1001T5E_1_1"
+				(rectangle
+					(start 2.54 1.27)
+					(end 7.62 -1.27)
 					(stroke
-						(width 0)
-						(type default)
+						(width 0.254)
+						(type solid)
 					)
 					(fill
 						(type none)
 					)
 				)
-			)
-			(symbol "TestPoint_1_1"
 				(pin passive line
-					(at 0 0 90)
+					(at 0 0 0)
 					(length 2.54)
 					(name "1"
 						(effects
@@ -107,6 +147,24 @@
 						)
 					)
 					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 10.16 0 180)
+					(length 2.54)
+					(name "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -2583,7 +2641,7 @@
 	)
 	(text_box "Basic protection resistor to limit current."
 		(exclude_from_sim no)
-		(at 220.98 63.5 0)
+		(at 219.71 62.23 0)
 		(size 22.86 5.08)
 		(margins 0.9525 0.9525 0.9525 0.9525)
 		(stroke
@@ -2603,8 +2661,8 @@
 	)
 	(text_box ""
 		(exclude_from_sim no)
-		(at 219.71 62.23 0)
-		(size 25.4 17.78)
+		(at 218.44 60.96 0)
+		(size 26.67 19.05)
 		(margins 0.9525 0.9525 0.9525 0.9525)
 		(stroke
 			(width 0.15)
@@ -2692,12 +2750,6 @@
 		(uuid "0f9544d7-dbbe-4683-b774-a61177328455")
 	)
 	(junction
-		(at 242.57 121.92)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "cb4bcb49-b9de-49ca-877c-c215a4c2e243")
-	)
-	(junction
 		(at 243.84 39.37)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2708,14 +2760,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "f9424f74-ec8f-488c-b0ba-df05ab58a9f6")
-	)
-	(no_connect
-		(at 100.33 83.82)
-		(uuid "741604c0-7524-4e6a-8d7c-9f74d7ec5b17")
-	)
-	(no_connect
-		(at 100.33 81.28)
-		(uuid "c45eef28-d3c5-4d5b-a712-eca0f3e7a246")
 	)
 	(bus_entry
 		(at 67.31 158.75)
@@ -2736,7 +2780,7 @@
 		(uuid "2319cc0f-4672-4e33-9c0a-296584c3f7b6")
 	)
 	(bus_entry
-		(at 67.31 171.45)
+		(at 66.04 171.45)
 		(size -2.54 2.54)
 		(stroke
 			(width 0)
@@ -2754,7 +2798,16 @@
 		(uuid "4135c8aa-fbb2-4fee-a82b-53f561fba692")
 	)
 	(bus_entry
-		(at 67.31 173.99)
+		(at 80.01 139.7)
+		(size -2.54 2.54)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5171a94e-1c56-4b15-845b-34852269c06c")
+	)
+	(bus_entry
+		(at 66.04 173.99)
 		(size -2.54 2.54)
 		(stroke
 			(width 0)
@@ -2770,6 +2823,15 @@
 			(type default)
 		)
 		(uuid "68aea89a-8db2-4c19-ba48-34b831691942")
+	)
+	(bus_entry
+		(at 80.01 142.24)
+		(size -2.54 2.54)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "da2a2d5c-02c2-4762-95b6-d9187855af89")
 	)
 	(bus_entry
 		(at 67.31 156.21)
@@ -2792,7 +2854,7 @@
 	)
 	(bus
 		(pts
-			(xy 67.31 171.45) (xy 67.31 168.91)
+			(xy 66.04 171.45) (xy 66.04 168.91)
 		)
 		(stroke
 			(width 0)
@@ -2839,6 +2901,16 @@
 			(type default)
 		)
 		(uuid "296eb7ef-3a0b-4926-8193-8a34ae615be3")
+	)
+	(wire
+		(pts
+			(xy 44.45 144.78) (xy 77.47 144.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2abce5e8-f2ee-418e-a134-c555e23c417e")
 	)
 	(wire
 		(pts
@@ -2922,6 +2994,16 @@
 	)
 	(wire
 		(pts
+			(xy 85.09 83.82) (xy 100.33 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "483eacd3-e8d2-435a-9024-70b3ce1e19ca")
+	)
+	(wire
+		(pts
 			(xy 241.3 76.2) (xy 254 76.2)
 		)
 		(stroke
@@ -2962,13 +3044,23 @@
 	)
 	(bus
 		(pts
-			(xy 67.31 168.91) (xy 68.58 168.91)
+			(xy 66.04 168.91) (xy 67.31 168.91)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "5d1b676d-a3f8-4a68-9286-7e747e0be8fd")
+	)
+	(bus
+		(pts
+			(xy 81.28 137.16) (xy 80.01 137.16)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "60a561bb-0cf4-4cd8-88c7-de34f1b58f19")
 	)
 	(bus
 		(pts
@@ -2979,6 +3071,26 @@
 			(type default)
 		)
 		(uuid "612a718b-5827-44a1-b232-a9eecc389340")
+	)
+	(wire
+		(pts
+			(xy 85.09 81.28) (xy 100.33 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "689d97e0-9e34-4c60-aa41-458a2de43f36")
+	)
+	(wire
+		(pts
+			(xy 64.77 142.24) (xy 77.47 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6c5e56bb-7d6e-4a2c-9f68-cdd10b760859")
 	)
 	(wire
 		(pts
@@ -3002,13 +3114,33 @@
 	)
 	(wire
 		(pts
-			(xy 53.34 173.99) (xy 64.77 173.99)
+			(xy 52.07 173.99) (xy 63.5 173.99)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "75afcf65-6d98-4385-9ef3-37f3dc9f77c0")
+	)
+	(wire
+		(pts
+			(xy 44.45 142.24) (xy 54.61 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7a5d5ab1-9b08-46d4-bf0c-e131ba9c61a5")
+	)
+	(bus
+		(pts
+			(xy 80.01 137.16) (xy 80.01 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7cf4e2ee-6060-4456-8af2-87e83528043d")
 	)
 	(wire
 		(pts
@@ -3042,7 +3174,7 @@
 	)
 	(wire
 		(pts
-			(xy 229.87 121.92) (xy 242.57 121.92)
+			(xy 229.87 116.84) (xy 256.54 116.84)
 		)
 		(stroke
 			(width 0)
@@ -3062,13 +3194,23 @@
 	)
 	(wire
 		(pts
-			(xy 53.34 176.53) (xy 64.77 176.53)
+			(xy 52.07 176.53) (xy 63.5 176.53)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "84db36b0-2c2d-4ed9-8127-6e23dc9d89c8")
+	)
+	(bus
+		(pts
+			(xy 80.01 139.7) (xy 80.01 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8a6b85a5-7535-4fe1-ba05-82427d57c25c")
 	)
 	(wire
 		(pts
@@ -3122,7 +3264,7 @@
 	)
 	(bus
 		(pts
-			(xy 67.31 173.99) (xy 67.31 171.45)
+			(xy 66.04 173.99) (xy 66.04 171.45)
 		)
 		(stroke
 			(width 0)
@@ -3320,16 +3462,6 @@
 		)
 		(uuid "fbda4f3b-aa4a-4be2-a601-a7fe1c6f45c3")
 	)
-	(wire
-		(pts
-			(xy 242.57 121.92) (xy 256.54 121.92)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fca7e274-7001-45b3-b381-5457916d4e76")
-	)
 	(bus
 		(pts
 			(xy 256.54 92.71) (xy 256.54 96.52)
@@ -3350,8 +3482,18 @@
 		)
 		(uuid "00bc893d-f30a-4285-919a-285a5644d84d")
 	)
+	(label "PV_SNS"
+		(at 140.97 88.9 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "0261be45-a011-440c-a7ee-3eca4c6fa18b")
+	)
 	(label "SNS"
-		(at 53.34 173.99 0)
+		(at 52.07 173.99 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3369,16 +3511,6 @@
 			(justify left bottom)
 		)
 		(uuid "08592631-d782-434e-be7c-53891167f594")
-	)
-	(label "P_WARN"
-		(at 140.97 86.36 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "0c5db40b-19b9-4024-b222-2edbcf47174f")
 	)
 	(label "UPDI_C"
 		(at 246.38 76.2 0)
@@ -3400,6 +3532,26 @@
 		)
 		(uuid "34db6868-4c27-4f46-95c7-c7ea059f8e58")
 	)
+	(label "PV_SNS_R"
+		(at 67.31 142.24 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "3d4ced9b-cc53-43f8-92c0-eab1dd5294f6")
+	)
+	(label "P_WARN"
+		(at 85.09 83.82 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "4bb99e99-9a45-483b-8a26-c6f0ed36ac53")
+	)
 	(label "SDA"
 		(at 140.97 78.74 180)
 		(effects
@@ -3420,16 +3572,6 @@
 		)
 		(uuid "5ca18f93-db0d-448e-b046-2335288c5a76")
 	)
-	(label "P_ON"
-		(at 140.97 88.9 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "5fa414c4-67da-47f9-8fd3-08757ead7007")
-	)
 	(label "+3V3"
 		(at 233.68 39.37 0)
 		(effects
@@ -3439,6 +3581,16 @@
 			(justify left bottom)
 		)
 		(uuid "6f0c4990-9bcc-46c6-ab9d-9fb6631ab78c")
+	)
+	(label "PV_SNS"
+		(at 44.45 142.24 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7570a593-7177-4a66-8d66-266bbecd68c6")
 	)
 	(label "SCL"
 		(at 140.97 81.28 180)
@@ -3481,7 +3633,7 @@
 		(uuid "96b446d0-ad85-4b9c-9a79-97d91b6eaff1")
 	)
 	(label "GND"
-		(at 229.87 121.92 0)
+		(at 229.87 116.84 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3491,7 +3643,7 @@
 		(uuid "a1484aed-3a95-4e5b-9aca-192cc3f3f95b")
 	)
 	(label "MOD"
-		(at 53.34 176.53 0)
+		(at 52.07 176.53 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3499,6 +3651,16 @@
 			(justify left bottom)
 		)
 		(uuid "a7477a5e-a3b9-4dfb-8525-2037b3867a69")
+	)
+	(label "P_ON"
+		(at 85.09 81.28 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b3f6a172-0b33-42ce-a80d-7c8bcaed13cf")
 	)
 	(label "P_ON"
 		(at 102.87 171.45 0)
@@ -3520,6 +3682,16 @@
 		)
 		(uuid "bfa15a2f-b526-41b3-a4bb-868ac4dfe919")
 	)
+	(label "PI_SNS"
+		(at 140.97 86.36 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "ce0a88f7-2580-4034-9375-3aa720d883bf")
+	)
 	(label "PMP_EN"
 		(at 85.09 78.74 0)
 		(effects
@@ -3529,6 +3701,16 @@
 			(justify left bottom)
 		)
 		(uuid "cf42c30f-ef8e-42b2-9b19-a2dbbdb61191")
+	)
+	(label "PI_SNS"
+		(at 44.45 144.78 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d0b216cf-3514-4cb6-afdf-87a5e9962cbb")
 	)
 	(label "MOD"
 		(at 140.97 91.44 180)
@@ -3612,6 +3794,17 @@
 		)
 		(uuid "38f04dd8-85e1-402c-a6eb-012b2eae2f33")
 	)
+	(hierarchical_label "{SNS}"
+		(shape input)
+		(at 81.28 137.16 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "90522d8c-2caa-4ee6-bfbf-a61d1d4a2d3b")
+	)
 	(hierarchical_label "{PMP}"
 		(shape bidirectional)
 		(at 68.58 153.67 0)
@@ -3625,7 +3818,7 @@
 	)
 	(hierarchical_label "{GEN}"
 		(shape bidirectional)
-		(at 68.58 168.91 0)
+		(at 67.31 168.91 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3922,6 +4115,132 @@
 			(project "MQTT-Module-PumpController"
 				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/aa87b2dd-90b3-41b3-8e99-8dcc5f11db59"
 					(reference "C205")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "JLCPCB Basic:0805W8F1001T5E")
+		(at 54.61 142.24 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2b4678af-4a53-4fa3-ab81-7976d61c1aa0")
+		(property "Reference" "R202"
+			(at 59.69 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "1kΩ 1/8W 1%"
+			(at 59.69 139.446 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "JLCPCB Basic:RESC2013X65N"
+			(at 68.58 238.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 68.58 338.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor SMD 1kΩ 1/8W 1% 150V"
+			(at 59.69 146.558 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Height" "0.65"
+			(at 68.58 538.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "UNI-ROYAL(Uniroyal Elec)"
+			(at 68.58 838.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer Part No" "0805W8F1001T5E"
+			(at 68.58 938.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Package" "0805"
+			(at 59.436 148.844 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "JLCPCB Part #" "C17513"
+			(at 59.69 151.384 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Type" "Basic"
+			(at 60.198 153.416 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8afbf8cd-7bec-4b9b-8b81-fad2cb57af34")
+		)
+		(pin "2"
+			(uuid "61c5cb3a-467e-4360-bf39-18cbce60f554")
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/aa87b2dd-90b3-41b3-8e99-8dcc5f11db59"
+					(reference "R202")
 					(unit 1)
 				)
 			)
@@ -4798,7 +5117,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 256.54 121.92 90)
+		(at 256.54 116.84 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4806,7 +5125,7 @@
 		(dnp no)
 		(uuid "96aa7c8b-e9c4-479d-96c9-40245288e231")
 		(property "Reference" "#PWR0206"
-			(at 262.89 121.92 0)
+			(at 262.89 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4815,7 +5134,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 259.842 121.92 90)
+			(at 259.842 116.84 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4824,7 +5143,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 256.54 121.92 0)
+			(at 256.54 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4833,7 +5152,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 256.54 121.92 0)
+			(at 256.54 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4842,7 +5161,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 256.54 121.92 0)
+			(at 256.54 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5091,72 +5410,6 @@
 			(project "MQTT-Module-PumpController"
 				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/aa87b2dd-90b3-41b3-8e99-8dcc5f11db59"
 					(reference "#PWR0201")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 242.57 121.92 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "c8b43b9c-35ed-4cd3-80b7-8aee3d8704d7")
-		(property "Reference" "TP202"
-			(at 244.094 117.348 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TestPoint"
-			(at 244.094 119.38 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_2.0x2.0mm"
-			(at 247.65 121.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 247.65 121.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "test point"
-			(at 242.57 121.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "95bec185-619a-4de0-a1c8-4ec45ff1eb72")
-		)
-		(instances
-			(project "MQTT-Module-PumpController"
-				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/aa87b2dd-90b3-41b3-8e99-8dcc5f11db59"
-					(reference "TP202")
 					(unit 1)
 				)
 			)
