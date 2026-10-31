@@ -4466,10 +4466,22 @@
 		(uuid "86faf49e-ba9d-4983-96d9-01ea2811636f")
 	)
 	(junction
+		(at 74.93 127)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "891c7678-e207-4b0b-936c-c723edb008ee")
+	)
+	(junction
 		(at 123.19 91.44)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "918a8b98-2f31-41c5-9b9d-5e32456dd9ba")
+	)
+	(junction
+		(at 77.47 129.54)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "9cea6a35-a97f-4284-986b-8b4e37342915")
 	)
 	(junction
 		(at 226.06 133.35)
@@ -4561,7 +4573,7 @@
 	)
 	(wire
 		(pts
-			(xy 78.74 129.54) (xy 100.33 129.54)
+			(xy 74.93 129.54) (xy 77.47 129.54)
 		)
 		(stroke
 			(width 0)
@@ -4699,6 +4711,16 @@
 		)
 		(uuid "307c6b40-b639-4ac5-86d0-2619aebbd400")
 	)
+	(wire
+		(pts
+			(xy 59.69 121.92) (xy 60.96 121.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3238c4fb-5805-42d9-81fb-359ec8a61454")
+	)
 	(bus
 		(pts
 			(xy 68.58 129.54) (xy 71.12 129.54)
@@ -4728,6 +4750,16 @@
 			(type default)
 		)
 		(uuid "43163685-220c-41e9-b863-81997facd0f4")
+	)
+	(wire
+		(pts
+			(xy 71.12 121.92) (xy 74.93 121.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "46df0420-2fa3-4299-81d7-e89cf3be0371")
 	)
 	(wire
 		(pts
@@ -4818,6 +4850,16 @@
 			(type default)
 		)
 		(uuid "5dddea39-8b64-4028-ad1e-831c0222aa7f")
+	)
+	(wire
+		(pts
+			(xy 77.47 142.24) (xy 77.47 143.51)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "622cb69a-7325-476b-a670-587213690676")
 	)
 	(wire
 		(pts
@@ -4971,6 +5013,16 @@
 	)
 	(wire
 		(pts
+			(xy 74.93 127) (xy 100.33 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "942c07ee-ccb9-4e2c-97dc-8e8b2d9e59a1")
+	)
+	(wire
+		(pts
 			(xy 73.66 157.48) (xy 213.36 157.48)
 		)
 		(stroke
@@ -4998,6 +5050,16 @@
 			(type default)
 		)
 		(uuid "a7275a5b-2a20-4236-878b-88d63c5ba9c5")
+	)
+	(wire
+		(pts
+			(xy 77.47 129.54) (xy 77.47 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a828d73a-0e48-4571-8a2b-47bb0bd155a3")
 	)
 	(wire
 		(pts
@@ -5091,7 +5153,7 @@
 	)
 	(wire
 		(pts
-			(xy 73.66 127) (xy 100.33 127)
+			(xy 73.66 127) (xy 74.93 127)
 		)
 		(stroke
 			(width 0)
@@ -5191,6 +5253,16 @@
 	)
 	(wire
 		(pts
+			(xy 74.93 121.92) (xy 74.93 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dee9374a-d8be-44a5-94af-c2bfafc6b9ac")
+	)
+	(wire
+		(pts
 			(xy 48.26 102.87) (xy 48.26 157.48)
 		)
 		(stroke
@@ -5241,7 +5313,7 @@
 	)
 	(wire
 		(pts
-			(xy 73.66 133.35) (xy 78.74 133.35)
+			(xy 73.66 133.35) (xy 74.93 133.35)
 		)
 		(stroke
 			(width 0)
@@ -5301,13 +5373,23 @@
 	)
 	(wire
 		(pts
-			(xy 78.74 129.54) (xy 78.74 133.35)
+			(xy 74.93 129.54) (xy 74.93 133.35)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "f7160efa-7fea-4ce5-8b4b-d316bd6408fc")
+	)
+	(wire
+		(pts
+			(xy 77.47 129.54) (xy 100.33 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f7bb8ef1-f21a-458e-8ce5-b9fa69d40232")
 	)
 	(wire
 		(pts
@@ -6712,6 +6794,174 @@
 		)
 	)
 	(symbol
+		(lib_id "JLCPCB Basic:0805W8F1002T5E")
+		(at 77.47 132.08 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "7b7689eb-3576-49e0-8e7d-e8c2d10dd9cd")
+		(property "Reference" "R403"
+			(at 84.582 138.43 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "10kΩ 1/8W 1%"
+			(at 94.234 136.144 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "JLCPCB Basic:RESC2013X65N"
+			(at -18.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at -118.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor SMD 10kΩ 1/8W 1% 150V"
+			(at 73.152 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Height" "0.65"
+			(at -318.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Mouser Part Number" "303-0805W8F1002T5E"
+			(at -418.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Mouser Price/Stock" "https://au.mouser.com/ProductDetail/Royalohm/0805W8F1002T5E?qs=e8oIoAS2J1QfYPOBCQ0fIg%3D%3D"
+			(at -518.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer_Name" "UNI-ROYAL(Uniroyal Elec)"
+			(at -618.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer_Part_Number" "0805W8F1002T5E"
+			(at -718.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Package" "0805"
+			(at 70.866 136.906 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "JLCPCB Part #" "C17414"
+			(at 68.326 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Type" "Basic"
+			(at 66.294 137.668 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "UNI-ROYAL(Uniroyal Elec)"
+			(at -618.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer Part No" "0805W8F1002T5E"
+			(at -718.72 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "bcfc3238-e89a-4801-a08b-2cc4e623db88")
+		)
+		(pin "1"
+			(uuid "823fc621-daaf-4fa8-b246-b4877f6800ce")
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/3f396550-8e50-448c-b09c-e7e2a4727b8c"
+					(reference "R403")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 97.79 118.11 270)
 		(unit 1)
@@ -6771,6 +7021,71 @@
 			(project "MQTT-Module-PumpController"
 				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/3f396550-8e50-448c-b09c-e7e2a4727b8c"
 					(reference "#PWR0802")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 59.69 121.92 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "995c35bf-64ff-44ba-8560-207cdf2e8791")
+		(property "Reference" "#PWR0404"
+			(at 53.34 121.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 54.356 121.92 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 59.69 121.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 59.69 121.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 59.69 121.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "42836950-3355-4a03-a0cc-5e83ae36d5f7")
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/3f396550-8e50-448c-b09c-e7e2a4727b8c"
+					(reference "#PWR0404")
 					(unit 1)
 				)
 			)
@@ -8472,6 +8787,239 @@
 			(project "MQTT-Module-PumpController"
 				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/3f396550-8e50-448c-b09c-e7e2a4727b8c"
 					(reference "C802")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "JLCPCB Basic:0805W8F1002T5E")
+		(at 71.12 121.92 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "eb20eeb8-675c-4d49-995d-e2e747661650")
+		(property "Reference" "R402"
+			(at 64.008 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10kΩ 1/8W 1%"
+			(at 73.66 124.714 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "JLCPCB Basic:RESC2013X65N"
+			(at 57.15 25.73 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 57.15 -74.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor SMD 10kΩ 1/8W 1% 150V"
+			(at 66.04 117.602 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Height" "0.65"
+			(at 57.15 -274.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Mouser Part Number" "303-0805W8F1002T5E"
+			(at 57.15 -374.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Mouser Price/Stock" "https://au.mouser.com/ProductDetail/Royalohm/0805W8F1002T5E?qs=e8oIoAS2J1QfYPOBCQ0fIg%3D%3D"
+			(at 57.15 -474.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer_Name" "UNI-ROYAL(Uniroyal Elec)"
+			(at 57.15 -574.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer_Part_Number" "0805W8F1002T5E"
+			(at 57.15 -674.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Package" "0805"
+			(at 66.294 115.316 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "JLCPCB Part #" "C17414"
+			(at 66.04 112.776 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Type" "Basic"
+			(at 65.532 110.744 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "UNI-ROYAL(Uniroyal Elec)"
+			(at 57.15 -574.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer Part No" "0805W8F1002T5E"
+			(at 57.15 -674.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "f717d2be-23b8-450e-9aa0-a3abd1b4b4ea")
+		)
+		(pin "1"
+			(uuid "1a238733-523e-4d99-90a1-a9f8087b5388")
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/3f396550-8e50-448c-b09c-e7e2a4727b8c"
+					(reference "R402")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 77.47 143.51 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ee19552e-a9e4-4005-baf8-8e6159c466b2")
+		(property "Reference" "#PWR0405"
+			(at 77.47 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 77.724 147.574 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 77.47 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 77.47 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 77.47 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6c1cde78-04a6-4bcf-a5d8-30e112828a96")
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/3f396550-8e50-448c-b09c-e7e2a4727b8c"
+					(reference "#PWR0405")
 					(unit 1)
 				)
 			)
