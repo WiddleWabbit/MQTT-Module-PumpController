@@ -10,6 +10,296 @@
 		(rev "1.1")
 	)
 	(lib_symbols
+		(symbol "CJT Connectors:A2541HWV-3P"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "J"
+				(at -6.096 2.794 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "A2541HWV-3P"
+				(at 0.508 -7.874 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "CJT Connectors:PinSocket_1x03_P2.54mm_Vertical_Female"
+				(at 1.27 -28.956 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8588890050382086144"
+				(at 0.508 -14.986 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Female Header, 1x3, 250V, 3A, Through Hole, 8.5mm"
+				(at 0.762 -12.446 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Manufacturer" "CJT(Changjiang Connectors)"
+				(at 0.762 -17.018 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Manufacturer Part No" "A2541HWV-3P"
+				(at 1.524 -19.558 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "JLCPCB Part #" "C225500"
+				(at 1.524 -26.416 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Part Type" "Extended"
+				(at 1.27 -21.59 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Package" "Plugin,P=2.54mm"
+				(at 1.27 -23.622 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "A2541HWV-3P_0_1"
+				(rectangle
+					(start -1.27 1.27)
+					(end 0.762 -6.35)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -0.762 0.508)
+					(end 0.254 -0.508)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -0.762 -2.032)
+					(end 0.254 -3.048)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -0.762 -4.572)
+					(end 0.254 -5.588)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "A2541HWV-3P_1_1"
+				(polyline
+					(pts
+						(xy -2.54 0) (xy -1.778 0)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 -2.54) (xy -1.778 -2.54)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 -5.08) (xy -1.778 -5.08)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -1.27 -0.508)
+					(mid -1.7758 0)
+					(end -1.27 0.508)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -1.27 -3.048)
+					(mid -1.7758 -2.54)
+					(end -1.27 -2.032)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -1.27 -5.588)
+					(mid -1.7758 -5.08)
+					(end -1.27 -4.572)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -6.35 0 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -6.35 -2.54 0)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -6.35 -5.08 0)
+					(length 3.81)
+					(name "Pin_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "CJT Connectors:A2541WV-10P"
 			(pin_names
 				(offset 1.016)
@@ -2106,6 +2396,10 @@
 		(uuid "6e1b141a-d218-4a2a-96f0-635c506e2b55")
 	)
 	(no_connect
+		(at 80.01 69.85)
+		(uuid "74fc0c9f-2f3d-4ceb-8028-981e9a0f0559")
+	)
+	(no_connect
 		(at 80.01 64.77)
 		(uuid "a6a9c3d2-8136-4ae0-b6b9-e3894d922082")
 	)
@@ -2126,6 +2420,15 @@
 			(type default)
 		)
 		(uuid "52e163a4-70c3-4fcf-ac85-e6e7d43cee36")
+	)
+	(bus_entry
+		(at 224.79 45.72)
+		(size -2.54 -2.54)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7b3d231c-a86c-4944-bdf8-edce55c7bcd1")
 	)
 	(bus_entry
 		(at 260.35 87.63)
@@ -2162,15 +2465,6 @@
 			(type default)
 		)
 		(uuid "abd072b9-548b-42af-9ccf-af5afe87f013")
-	)
-	(bus_entry
-		(at 85.09 72.39)
-		(size -2.54 -2.54)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e3032b0d-74ba-4bf7-b871-10accdfcae2c")
 	)
 	(wire
 		(pts
@@ -2234,6 +2528,16 @@
 	)
 	(wire
 		(pts
+			(xy 210.82 43.18) (xy 222.25 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2079251e-b782-45c1-83ae-e10dcb5612ee")
+	)
+	(wire
+		(pts
 			(xy 215.9 95.25) (xy 243.84 95.25)
 		)
 		(stroke
@@ -2281,6 +2585,16 @@
 			(type default)
 		)
 		(uuid "32f0fb06-6514-452d-84be-aa6e4d9cc759")
+	)
+	(bus
+		(pts
+			(xy 231.14 45.72) (xy 224.79 45.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3443251a-b829-4230-b847-3119188d7dc6")
 	)
 	(wire
 		(pts
@@ -2341,6 +2655,16 @@
 			(type default)
 		)
 		(uuid "4a64b5ca-d7ab-4e30-92cb-a6cd5e989992")
+	)
+	(wire
+		(pts
+			(xy 210.82 48.26) (xy 217.17 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4adf1991-87cf-46c2-a702-d8d05c6995b2")
 	)
 	(wire
 		(pts
@@ -2512,16 +2836,6 @@
 		)
 		(uuid "81f4af19-b21b-4b85-9a11-b47594549a6a")
 	)
-	(bus
-		(pts
-			(xy 91.44 72.39) (xy 85.09 72.39)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8b3b5683-9f6e-49af-9408-19be6e906052")
-	)
 	(wire
 		(pts
 			(xy 76.2 123.19) (xy 74.93 123.19)
@@ -2604,6 +2918,16 @@
 	)
 	(wire
 		(pts
+			(xy 210.82 45.72) (xy 213.36 45.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a51069b7-4dc9-4fc2-8abf-6a8424201244")
+	)
+	(wire
+		(pts
 			(xy 86.36 39.37) (xy 86.36 41.91)
 		)
 		(stroke
@@ -2634,7 +2958,7 @@
 	)
 	(wire
 		(pts
-			(xy 71.12 69.85) (xy 82.55 69.85)
+			(xy 71.12 69.85) (xy 80.01 69.85)
 		)
 		(stroke
 			(width 0)
@@ -2862,7 +3186,7 @@
 		)
 		(uuid "f9a2a7fd-a3a8-45d5-b3d1-974704f4a22f")
 	)
-	(label "UPDI_C"
+	(label "MOSI"
 		(at 76.2 130.81 0)
 		(effects
 			(font
@@ -3102,6 +3426,16 @@
 		)
 		(uuid "b3d9a87a-8620-4bab-901b-0917d8763096")
 	)
+	(label "UPDI_C"
+		(at 210.82 43.18 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "bc704044-cde1-43b6-b09f-6903a9278a64")
+	)
 	(label "MOD"
 		(at 71.12 41.91 0)
 		(effects
@@ -3182,7 +3516,7 @@
 		)
 		(uuid "d9045713-1b00-4aae-bc9b-3e7b385daa81")
 	)
-	(label "UPDI_C"
+	(label "MOSI"
 		(at 71.12 69.85 0)
 		(effects
 			(font
@@ -3273,6 +3607,17 @@
 		)
 		(uuid "2c765ae6-33ce-44f3-b522-ebb1fa7b78c7")
 	)
+	(hierarchical_label "{UPDI}"
+		(shape bidirectional)
+		(at 231.14 45.72 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2d0b57db-67b6-438e-b3f0-1a1be5d75ee7")
+	)
 	(hierarchical_label "{PMP_Terminals}"
 		(shape output)
 		(at 261.62 97.79 0)
@@ -3294,17 +3639,6 @@
 			(justify left)
 		)
 		(uuid "71b574f4-bcd0-48d2-a6bd-1eca00f2b525")
-	)
-	(hierarchical_label "{UPDI}"
-		(shape bidirectional)
-		(at 91.44 72.39 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "b9757b61-4fef-405d-b312-408575a43190")
 	)
 	(hierarchical_label "{GEN}"
 		(shape bidirectional)
@@ -3448,6 +3782,72 @@
 			(project ""
 				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/5bb4b2fb-c117-403c-b2ae-c89cbb06dbb3"
 					(reference "J301")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 217.17 48.26 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2aea367b-06de-4123-87d5-00fd621faf47")
+		(property "Reference" "#PWR0303"
+			(at 213.36 48.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 220.98 48.2599 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 217.17 48.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 217.17 48.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+			(at 217.17 48.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "c842709f-ad30-4ac5-9d54-2a1c2671dd8c")
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/5bb4b2fb-c117-403c-b2ae-c89cbb06dbb3"
+					(reference "#PWR0303")
 					(unit 1)
 				)
 			)
@@ -3731,6 +4131,189 @@
 			(project "MQTT-Module-PumpController"
 				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/5bb4b2fb-c117-403c-b2ae-c89cbb06dbb3"
 					(reference "D303")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "CJT Connectors:A2541HWV-3P")
+		(at 204.47 48.26 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "7f6a711f-d702-4c26-8faa-9b36e5a9936a")
+		(property "Reference" "J303"
+			(at 205.3971 36.83 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "A2541HWV-3P"
+			(at 205.3971 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "CJT Connectors:PinSocket_1x03_P2.54mm_Vertical_Female"
+			(at 203.2 19.304 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8588890050382086144"
+			(at 203.962 33.274 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Female Header, 1x3, 250V, 3A, Through Hole, 8.5mm"
+			(at 203.708 35.814 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "CJT(Changjiang Connectors)"
+			(at 203.708 31.242 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer Part No" "A2541HWV-3P"
+			(at 202.946 28.702 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "JLCPCB Part #" "C225500"
+			(at 202.946 21.844 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Type" "Extended"
+			(at 203.2 26.67 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Package" "Plugin,P=2.54mm"
+			(at 203.2 24.638 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "e44a3eab-0d56-4fe4-a010-6f7ae538000e")
+		)
+		(pin "3"
+			(uuid "d353e914-d830-4da9-818a-d705e8dd8719")
+		)
+		(pin "1"
+			(uuid "6a9447cf-e3ec-4516-a691-15c1b052c69f")
+		)
+		(instances
+			(project ""
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/5bb4b2fb-c117-403c-b2ae-c89cbb06dbb3"
+					(reference "J303")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 213.36 45.72 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "99890568-b79b-4201-a7de-13b618503eae")
+		(property "Reference" "#PWR0304"
+			(at 219.71 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 217.17 45.7199 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 213.36 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 213.36 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 213.36 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1c492ef4-3195-46e9-b8e8-eaeafc9318ab")
+		)
+		(instances
+			(project "MQTT-Module-PumpController"
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/5bb4b2fb-c117-403c-b2ae-c89cbb06dbb3"
+					(reference "#PWR0304")
 					(unit 1)
 				)
 			)

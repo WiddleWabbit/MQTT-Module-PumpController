@@ -545,7 +545,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "JLCPCB Basic:0805W8F3300T5E"
+		(symbol "JLCPCB Basic:0805W8F4700T5E"
 			(pin_numbers
 				(hide yes)
 			)
@@ -556,7 +556,7 @@
 			(in_bom yes)
 			(on_board yes)
 			(property "Reference" "R"
-				(at -2.54 6.604 0)
+				(at -2.032 6.35 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -564,8 +564,8 @@
 					(justify left top)
 				)
 			)
-			(property "Value" "330Ω 1/8W 1%"
-				(at -2.54 4.064 0)
+			(property "Value" "470Ω 1/8W 1%"
+				(at -2.032 4.318 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -593,7 +593,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Resistor SMD 330Ω 1/8W 1% 150V"
+			(property "Description" "Resistor SMD 470Ω 1/8W 1% 150V"
 				(at 5.08 -3.556 0)
 				(effects
 					(font
@@ -602,7 +602,7 @@
 					(hide yes)
 				)
 			)
-			(property "Height" "0.65"
+			(property "Height" ""
 				(at 13.97 -396.19 0)
 				(effects
 					(font
@@ -612,7 +612,7 @@
 					(hide yes)
 				)
 			)
-			(property "Mouser Part Number" "303-0805W8F3300T5E"
+			(property "Mouser Part Number" ""
 				(at 13.97 -496.19 0)
 				(effects
 					(font
@@ -622,7 +622,7 @@
 					(hide yes)
 				)
 			)
-			(property "Mouser Price/Stock" "https://au.mouser.com/ProductDetail/Royalohm/0805W8F3300T5E?qs=e8oIoAS2J1RB4NrcMUAClQ%3D%3D"
+			(property "Mouser Price/Stock" ""
 				(at 13.97 -596.19 0)
 				(effects
 					(font
@@ -642,7 +642,7 @@
 					(hide yes)
 				)
 			)
-			(property "Manufacturer Part No" "0805W8F3300T5E"
+			(property "Manufacturer Part No" "0805W8F4700T5E"
 				(at 13.97 -796.19 0)
 				(effects
 					(font
@@ -661,7 +661,7 @@
 					(hide yes)
 				)
 			)
-			(property "JLCPCB Part #" "C17630"
+			(property "JLCPCB Part #" "C17710"
 				(at 5.334 -5.842 0)
 				(effects
 					(font
@@ -671,7 +671,7 @@
 				)
 			)
 			(property "Part Type" "Basic"
-				(at 5.334 -10.16 0)
+				(at 5.334 -9.652 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -679,7 +679,7 @@
 					(hide yes)
 				)
 			)
-			(symbol "0805W8F3300T5E_1_1"
+			(symbol "0805W8F4700T5E_1_1"
 				(rectangle
 					(start 2.54 1.27)
 					(end 7.62 -1.27)
@@ -4755,153 +4755,6 @@
 		)
 	)
 	(symbol
-		(lib_id "JLCPCB Basic:0805W8F3300T5E")
-		(at 231.14 76.2 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "5e71db7a-6d28-4538-83fd-6f15966c2165")
-		(property "Reference" "R201"
-			(at 236.22 69.85 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "330Ω 1/8W 1%"
-			(at 236.22 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "JLCPCB Basic:RESC2013X65N"
-			(at 245.11 172.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 245.11 272.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor SMD 330Ω 1/8W 1% 150V"
-			(at 236.22 79.756 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Height" "0.65"
-			(at 245.11 472.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Mouser Part Number" "303-0805W8F3300T5E"
-			(at 245.11 572.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Mouser Price/Stock" "https://au.mouser.com/ProductDetail/Royalohm/0805W8F3300T5E?qs=e8oIoAS2J1RB4NrcMUAClQ%3D%3D"
-			(at 245.11 672.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Manufacturer" "UNI-ROYAL(Uniroyal Elec)"
-			(at 245.11 772.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Manufacturer Part No" "0805W8F3300T5E"
-			(at 245.11 872.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Package" "0805"
-			(at 236.474 84.074 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "JLCPCB Part #" "C17630"
-			(at 236.474 82.042 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Part Type" "Basic"
-			(at 236.474 86.36 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "53abe392-6278-43ab-a16f-a55977ff447b")
-		)
-		(pin "1"
-			(uuid "0500ec47-ec1e-4be7-90f0-c557b8a8ff5e")
-		)
-		(instances
-			(project ""
-				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/aa87b2dd-90b3-41b3-8e99-8dcc5f11db59"
-					(reference "R201")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "JLCPCB Basic:0805W8F750JT5E")
 		(at 116.84 171.45 0)
 		(unit 1)
@@ -5344,6 +5197,153 @@
 			(project "MQTT-Module-PumpController"
 				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/aa87b2dd-90b3-41b3-8e99-8dcc5f11db59"
 					(reference "R204")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "JLCPCB Basic:0805W8F4700T5E")
+		(at 231.14 76.2 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "a089937f-3fdd-4a93-863a-21424dbefeef")
+		(property "Reference" "R203"
+			(at 236.22 69.85 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "470Ω 1/8W 1%"
+			(at 236.22 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "JLCPCB Basic:RESC2013X65N"
+			(at 245.11 172.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 245.11 272.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor SMD 470Ω 1/8W 1% 150V"
+			(at 236.22 79.756 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Height" ""
+			(at 245.11 472.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Mouser Part Number" ""
+			(at 245.11 572.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Mouser Price/Stock" ""
+			(at 245.11 672.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "UNI-ROYAL(Uniroyal Elec)"
+			(at 245.11 772.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer Part No" "0805W8F4700T5E"
+			(at 245.11 872.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(property "Package" "0805"
+			(at 236.474 84.074 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "JLCPCB Part #" "C17710"
+			(at 236.474 82.042 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Type" "Basic"
+			(at 236.474 85.852 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "e01f5f0d-ce4d-4f5d-87f3-40ed86b642e2")
+		)
+		(pin "2"
+			(uuid "a1834da4-f5f0-408b-9dab-f4f0f0c269d9")
+		)
+		(instances
+			(project ""
+				(path "/fcdc4d99-6273-4901-9910-bd8fd00b962f/aa87b2dd-90b3-41b3-8e99-8dcc5f11db59"
+					(reference "R203")
 					(unit 1)
 				)
 			)
