@@ -11,10 +11,11 @@ the switch has enhanced. Current through the shunt is what opens and
 closes a cycle.
 
 Held is enable high while `nPGD` is high and the motor is not holding
-current. Running is enable high after `nPGD` has gone low. A fault is
-current that stays up while `nPGD` stays high for
-`PUMP_STATUS_LIMIT_MS`. The green lamp follows running. The yellow
-lamp follows fault. Held and running are both reported as on.
+current. Running is enable high after `nPGD` has gone low. The first
+fault reason latches: slow start, overcurrent, undercurrent, or a
+stuck output. The green lamp follows running. The yellow lamp follows
+fault. Held and running are both reported as on. `GET_FAULT` reports
+the reason.
 
 ## Where it sits
 
@@ -22,7 +23,8 @@ lamp follows fault. Held and running are both reported as on.
 with those and the `PumpConfig` built from the product constants. It
 passes the pump to `ModuleLink`. `loop()` calls `update(millis())`
 with interrupts off. The link calls `turnOn`, `turnOff`, `reset`,
-`state`, and the three record reads from the TWI interrupt.
+`state`, `readFault`, and the three record reads from the TWI
+interrupt.
 `setup()` calls `AvrPumpPort::begin()` before it drives `SNS_PIN`.
 
 ## What it creates

@@ -58,7 +58,8 @@ Declared in `src/main.cpp`.
 | `PMP_EN_PIN` | 6 | PB1 | MCU side of the pressure AND gate. High is the command. Default TWI SDA |
 | `PMP_STATUS_PIN` | 7 | PB0 | LM5060 `nPGD`. Low means the switch has enhanced. Default TWI SCL |
 | `MODULE_TYPE` | `kTypePumpModule` | | Reported by `GET_IDENTITY` |
-| `FIRMWARE_VERSION` | 2 | | Reported by `GET_IDENTITY` |
+| `BOARD_REVISION` | 2 | | High byte of `GET_IDENTITY` firmware |
+| `FIRMWARE_REVISION` | 1 | | Low byte of `GET_IDENTITY` firmware. The pair is `0x0201` |
 | `PUMP_STATUS_LIMIT_MS` | 300 | | How long current may stay up while `nPGD` stays high |
 | `PUMP_COMMAND_LIMIT_MS` | 180000 | | How long held or running may continue after the last `SET_PUMP` on |
 

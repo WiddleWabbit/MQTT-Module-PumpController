@@ -43,6 +43,11 @@ PumpConfig makeConfig(uint32_t statusLimitMs, uint32_t commandLimitMs)
   config.millivoltsDen = 3;
   config.milliampsNum = 6600;
   config.milliampsDen = 1023;
+  config.overcurrentMilliamps = 5000;
+  config.overcurrentLimitMs = 60;
+  config.undercurrentMilliamps = 300;
+  config.undercurrentLimitMs = 1000;
+  config.stuckOnLimitMs = 100;
   return config;
 }
 
@@ -901,6 +906,85 @@ void testGetPumpRecordsDoNotRefreshCommandAge()
 }
 
 /**
+ * GET_FAULT before a fault is reason 0 and index 0.
+ *
+ * @return Nothing.
+ */
+void testGetFaultWhenIdle()
+{
+  Board board;
+  const uint8_t none[] = {
+    module_protocol::kFaultNone, 0};
+
+  writeCommand(board.port, module_protocol::kCmdGetFault, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, none,
+              module_protocol::kFaultPayloadLen);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, board.pump.state());
+}
+
+/**
+ * A loaded start that misses power-good reports slow start.
+ *
+ * @return Nothing.
+ */
+void testGetFaultReportsSlowStart()
+{
+  Board board;
+  loadAndFault(board);
+  const uint8_t fault[] = {
+    module_protocol::kPumpFaultSlowStart, 0};
+
+  writeCommand(board.port, module_protocol::kCmdGetFault, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, fault,
+              module_protocol::kFaultPayloadLen);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateFault, board.pump.state());
+}
+
+/**
+ * A payload on GET_FAULT is BadLength. The pump stays off.
+ *
+ * @return Nothing.
+ */
+void testGetFaultRejectsPayload()
+{
+  Board board;
+  const uint8_t extra = 1;
+
+  writeCommand(board.port, module_protocol::kCmdGetFault, &extra, 1);
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+}
+
+/**
+ * GET_FAULT, including a rejected one, leaves the on-command age
+ * on the last SET on.
+ *
+ * @return Nothing.
+ */
+void testGetFaultDoesNotRefreshCommandAge()
+{
+  constexpr uint32_t kShortMs = 1000;
+  Board board(kTestType, kTestFirmwareVersion, kShortMs);
+  board.pump.update(0);
+  board.pumpPort.statusLow = true;
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t off = module_protocol::kPumpStateOff;
+  const uint8_t extra = 1;
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(200);
+  writeCommand(board.port, module_protocol::kCmdGetFault, &extra, 1);
+  board.pump.update(400);
+  writeCommand(board.port, module_protocol::kCmdGetFault, nullptr, 0);
+
+  board.pump.update(kShortMs - 1);
+  TEST_ASSERT_EQUAL_UINT8(on, board.pump.state());
+  board.pump.update(kShortMs);
+  TEST_ASSERT_EQUAL_UINT8(off, board.pump.state());
+}
+
+/**
  * Runs the module-link desktop tests.
  *
  * @return Unity result.
@@ -934,6 +1018,10 @@ int main()
   RUN_TEST(testGetPumpNowReportsHeldSample);
   RUN_TEST(testGetPumpRecordsRejectPayload);
   RUN_TEST(testGetPumpRecordsDoNotRefreshCommandAge);
+  RUN_TEST(testGetFaultWhenIdle);
+  RUN_TEST(testGetFaultReportsSlowStart);
+  RUN_TEST(testGetFaultRejectsPayload);
+  RUN_TEST(testGetFaultDoesNotRefreshCommandAge);
   runPumpTests();
   return UNITY_END();
 }

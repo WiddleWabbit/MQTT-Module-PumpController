@@ -147,6 +147,20 @@ void ModuleLink::_handleCommand(uint8_t command, const uint8_t* payload,
       _replyStatus(module_protocol::kStatusOk);
       return;
 
+    case module_protocol::kCmdGetFault:
+      if (payloadLen != 0)
+      {
+        _replyStatus(module_protocol::kStatusBadLength);
+        return;
+      }
+      {
+        uint8_t fault[module_protocol::kFaultPayloadLen];
+        _pump.readFault(fault);
+        _replyPayload(module_protocol::kStatusOk, fault,
+                      module_protocol::kFaultPayloadLen);
+      }
+      return;
+
     case module_protocol::kCmdGetIdentity:
       if (payloadLen != 0)
       {

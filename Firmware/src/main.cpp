@@ -50,7 +50,13 @@ static_assert(PMP_STATUS_PIN == 7, "PB0 is pump status.");
 // ========== Product settings ==========
 
 const uint16_t MODULE_TYPE = module_protocol::kTypePumpModule;
-const uint16_t FIRMWARE_VERSION = 2;
+
+// Identity firmware bytes are board revision, then firmware revision.
+const uint8_t BOARD_REVISION = 2;
+const uint8_t FIRMWARE_REVISION = 1;
+const uint16_t FIRMWARE_VERSION =
+    static_cast<uint16_t>((static_cast<uint16_t>(BOARD_REVISION) << 8) |
+                          FIRMWARE_REVISION);
 
 // How long current may stay up while nPGD stays high. Past the
 // LM5060 timers on this board: startup about 157 ms, transition
@@ -69,6 +75,16 @@ const uint16_t PUMP_OFF_MILLIAMPS = 150;
 const uint32_t PUMP_OFF_DEBOUNCE_MS = 20;
 const uint16_t PUMP_SETTLED_MILLIVOLTS = 10000;
 const uint32_t PUMP_CYCLE_MIN_MS = 200;
+
+// 5000 mA for 60 ms trips before the LM5060 overcurrent timer.
+// Below 300 mA while the terminal stays at 10 V for 1 s is an open
+// load. Enable low with the terminal still at 10 V for 100 ms is a
+// MOSFET that did not turn off.
+const uint16_t PUMP_OVERCURRENT_MILLIAMPS = 5000;
+const uint32_t PUMP_OVERCURRENT_LIMIT_MS = 60;
+const uint16_t PUMP_UNDERCURRENT_MILLIAMPS = 300;
+const uint32_t PUMP_UNDERCURRENT_LIMIT_MS = 1000;
+const uint32_t PUMP_STUCK_ON_LIMIT_MS = 100;
 
 // 10-bit counts at 3.300 V. 720 counts is 12000 mV. 620 counts is
 // 4000 mA. mV = counts * 50 / 3. mA = counts * 6600 / 1023.
@@ -95,7 +111,12 @@ const PumpConfig pumpConfig = {
   PUMP_MILLIVOLTS_NUM,
   PUMP_MILLIVOLTS_DEN,
   PUMP_MILLIAMPS_NUM,
-  PUMP_MILLIAMPS_DEN
+  PUMP_MILLIAMPS_DEN,
+  PUMP_OVERCURRENT_MILLIAMPS,
+  PUMP_OVERCURRENT_LIMIT_MS,
+  PUMP_UNDERCURRENT_MILLIAMPS,
+  PUMP_UNDERCURRENT_LIMIT_MS,
+  PUMP_STUCK_ON_LIMIT_MS
 };
 Pump pump(pumpPort, pumpStore, pumpConfig);
 ModuleLink moduleLink(moduleSlave, pump, MODULE_TYPE, FIRMWARE_VERSION);

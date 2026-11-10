@@ -65,7 +65,21 @@ sense pins stay enabled. The divider and the INA186 drive them.
 
 Held and running are reported as on so the host stores the
 `SET_PUMP` result. The green lamp stays off until the phase is
-running.
+running. The yellow lamp is on for every fault reason. `GET_FAULT`
+returns the reason and index 0.
+
+| Reason | Code | Rule |
+| --- | --- | --- |
+| Slow start | 1 | Current at or above 300 mA and `nPGD` high for 300 ms |
+| Overcurrent | 2 | Current at or above 5000 mA for 60 ms, or that current was seen and the terminal then falls below 10 V while enable stays high |
+| Undercurrent | 3 | Terminal at or above 10 V and current under 300 mA for 1000 ms |
+| Stuck on | 4 | Enable low and the terminal stays at or above 10 V for 100 ms |
+
+The first reason stays until `RESET_PUMP`. A current at or above
+5000 mA that falls back under that level while the terminal stays
+above 10 V is not remembered. A normal stop under 5000 mA does not
+latch overcurrent. Enable high with neither voltage nor current
+stays held.
 
 ```text
 Off --turnOn, nPGD high--> Held --nPGD low--> Running
@@ -209,7 +223,12 @@ section.
 | `PUMP_SETTLED_MILLIVOLTS` | 10000 | Voltage that ends the soft-start time |
 | `PUMP_CYCLE_MIN_MS` | 200 | Shortest cycle that starts a store write |
 | `PUMP_MILLIVOLTS_NUM` / `DEN` | 50 / 3 | `mV = counts * 50 / 3`. 720 counts is 12000 mV |
-| `PUMP_MILLIAMPS_NUM` / `DEN` | 6600 / 1023 | `mA = counts * 6600 / 1023`. 620 counts is 4000 mA |
+| `PUMP_MILLIAMPS_NUM` / `DEN` | 6600 / 1023 | `mA = counts * 6600 / 1023`. 620 counts is 4000 mA. 775 counts is 5000 mA |
+| `PUMP_OVERCURRENT_MILLIAMPS` | 5000 | Current that arms the overcurrent watch |
+| `PUMP_OVERCURRENT_LIMIT_MS` | 60 | How long that current may last. Inside the LM5060's about 85 ms timer |
+| `PUMP_UNDERCURRENT_MILLIAMPS` | 300 | Current below this, while the terminal stays settled, arms undercurrent |
+| `PUMP_UNDERCURRENT_LIMIT_MS` | 1000 | How long that pair may last |
+| `PUMP_STUCK_ON_LIMIT_MS` | 100 | How long the terminal may stay settled while enable is low |
 
 The scale is for a 10-bit conversion against 3.300 V. The divider is
 100 kΩ over 24 kΩ. The shunt is 20 mΩ into an INA186A1 at gain 25,
@@ -276,6 +295,18 @@ is past those. Pins are on the
 | `testLaterLongCyclePersistsEarlierTotals` | The long cycle's image includes the earlier short cycle and the failed start |
 | `testTruncatedSaveDoesNotLoad` | Five writes after a save starts do not load |
 | `testTruncatedSaveLeavesPreviousSlot` | An abandoned next save leaves the finished slot |
+| `testOvercurrentAtSixtyMsFaults` | 5000 mA for 60 ms is overcurrent. 59 ms stays held |
+| `testOvercurrentCollapseFaults` | A high sample then a falling terminal is overcurrent |
+| `testOvercurrentClearsWhenRunContinues` | Current falling under 5000 mA while the terminal stays up clears the episode |
+| `testNormalStopIsNotOvercurrent` | A run under 5000 mA can lose terminal voltage and stay held |
+| `testOvercurrentUsesUnsignedWrap` | The 60 ms window wraps with `millis` |
+| `testUndercurrentAtOneSecondFaults` | 12 V and no current for 1 s is undercurrent |
+| `testUndercurrentResetsWhenVoltageFalls` | Voltage falling restarts that window |
+| `testConductingCurrentIsNotUndercurrent` | 303 mA at 12 V stays running |
+| `testStuckOnAtOneHundredMsFaults` | Enable low and 12 V for 100 ms is stuck on |
+| `testStuckOnResetsWhenVoltageFalls` | Voltage falling restarts that window |
+| `testSlowStartReasonStays` | The loaded `nPGD` window reports slow start, and a later high current leaves that reason |
+| `testResetClearsFaultReason` | `reset` clears the reason. A later `turnOn` runs |
 
 Link cases for the three record commands are on the
 [module link reference](module-link.md).

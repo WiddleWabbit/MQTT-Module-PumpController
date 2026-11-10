@@ -25,6 +25,15 @@ Pump::Pump(IPumpPort& port, IPumpStore& store, const PumpConfig& config)
     _phase(Phase::Off),
     _windowArmed(false),
     _npgdLow(false),
+    _faultReason(module_protocol::kFaultNone),
+    _outputWasSettled(false),
+    _overcurrentSeen(false),
+    _overcurrentArmed(false),
+    _underArmed(false),
+    _stuckArmed(false),
+    _overcurrentSinceMs(0),
+    _underSinceMs(0),
+    _stuckSinceMs(0),
     _storeLoaded(false),
     _senseFresh(false),
     _cycleOpen(false),
@@ -70,8 +79,9 @@ Pump::Pump(IPumpPort& port, IPumpStore& store, const PumpConfig& config)
 
 /**
  * Loads the store on the first call. Samples the sense pair when
- * a new one is ready, then nPGD, then the on-command age. Writes
- * at most one changed totals byte. The caller must not run this
+ * a new one is ready, then the fault watches, then nPGD, then the
+ * on-command age. Writes at most one changed totals byte. The
+ * caller must not run this
  * concurrently with turnOn, turnOff, reset, or the record reads.
  *
  * @param nowMs Milliseconds from the same clock as the last call.
@@ -87,8 +97,11 @@ void Pump::update(uint32_t nowMs)
     _storeLoaded = true;
   }
   _takeSense();
+  _watchOvercurrent();
+  _watchUndercurrent();
   _watchSwitch();
   _applyCommandAge();
+  _watchStuckOn();
   _serviceStore();
 }
 
@@ -189,6 +202,19 @@ void Pump::readTotals(uint8_t* dest) const
   _writeU16(dest + 10, _lifePeakMa);
   _writeU16(dest + 12, _failedStarts);
   _writeU16(dest + 14, _lastRunSeconds);
+}
+
+/**
+ * Writes the GET_FAULT payload. dest holds 2 bytes: reason, then
+ * index. The pump index is 0. Reason 0 is no fault.
+ *
+ * @param dest Destination. Not retained.
+ * @return Nothing.
+ */
+void Pump::readFault(uint8_t* dest) const
+{
+  dest[0] = _faultReason;
+  dest[1] = 0;
 }
 
 /**
@@ -316,12 +342,165 @@ void Pump::_noteSample()
 }
 
 /**
+ * Latches overcurrent from a sustained high sample or from a
+ * high sample followed by the terminal voltage falling.
+ *
+ * @return Nothing.
+ */
+void Pump::_watchOvercurrent()
+{
+  if (_phase != Phase::Held && _phase != Phase::Running)
+  {
+    return;
+  }
+  if (!_senseFresh)
+  {
+    return;
+  }
+
+  if (_voltageMv >= _config.settledMillivolts)
+  {
+    _outputWasSettled = true;
+  }
+
+  const bool high = _currentMa >= _config.overcurrentMilliamps;
+  if (high)
+  {
+    _overcurrentSeen = true;
+    if (!_overcurrentArmed)
+    {
+      _overcurrentArmed = true;
+      _overcurrentSinceMs = _nowMs;
+    }
+    else
+    {
+      const uint32_t elapsed =
+          static_cast<uint32_t>(_nowMs - _overcurrentSinceMs);
+      if (elapsed >= _config.overcurrentLimitMs)
+      {
+        _enterFault(module_protocol::kPumpFaultOvercurrent);
+        return;
+      }
+    }
+  }
+  else
+  {
+    _overcurrentArmed = false;
+  }
+
+  if (_overcurrentSeen && _outputWasSettled &&
+      _voltageMv < _config.settledMillivolts)
+  {
+    _enterFault(module_protocol::kPumpFaultOvercurrent);
+    return;
+  }
+
+  if (!high && _voltageMv >= _config.settledMillivolts)
+  {
+    _overcurrentSeen = false;
+  }
+}
+
+/**
+ * Latches undercurrent when the terminal stays settled and the
+ * current stays below the floor.
+ *
+ * @return Nothing.
+ */
+void Pump::_watchUndercurrent()
+{
+  if (_phase != Phase::Held && _phase != Phase::Running)
+  {
+    return;
+  }
+  if (!_senseFresh)
+  {
+    return;
+  }
+
+  const bool low = _voltageMv >= _config.settledMillivolts &&
+                   _currentMa < _config.undercurrentMilliamps;
+  if (!low)
+  {
+    _underArmed = false;
+    return;
+  }
+  if (!_underArmed)
+  {
+    _underArmed = true;
+    _underSinceMs = _nowMs;
+    return;
+  }
+  const uint32_t elapsed =
+      static_cast<uint32_t>(_nowMs - _underSinceMs);
+  if (elapsed >= _config.undercurrentLimitMs)
+  {
+    _enterFault(module_protocol::kPumpFaultUndercurrent);
+  }
+}
+
+/**
+ * Latches a stuck output when enable is low and the terminal
+ * stays settled.
+ *
+ * @return Nothing.
+ */
+void Pump::_watchStuckOn()
+{
+  if (_phase != Phase::Off)
+  {
+    _stuckArmed = false;
+    return;
+  }
+  if (!_senseFresh)
+  {
+    return;
+  }
+  if (_voltageMv < _config.settledMillivolts)
+  {
+    _stuckArmed = false;
+    return;
+  }
+  if (!_stuckArmed)
+  {
+    _stuckArmed = true;
+    _stuckSinceMs = _nowMs;
+    return;
+  }
+  const uint32_t elapsed =
+      static_cast<uint32_t>(_nowMs - _stuckSinceMs);
+  if (elapsed >= _config.stuckOnLimitMs)
+  {
+    _enterFault(module_protocol::kPumpFaultStuckOn);
+  }
+}
+
+/**
+ * Clears the fault reason and the fault-watch timers.
+ *
+ * @return Nothing.
+ */
+void Pump::_clearFaultWatch()
+{
+  _faultReason = module_protocol::kFaultNone;
+  _outputWasSettled = false;
+  _overcurrentSeen = false;
+  _overcurrentArmed = false;
+  _underArmed = false;
+  _stuckArmed = false;
+}
+
+/**
  * Moves between held, running, and fault from nPGD and current.
  *
  * @return Nothing.
  */
 void Pump::_watchSwitch()
 {
+  if (_phase == Phase::Fault)
+  {
+    return;
+  }
   if (_npgdLow)
   {
     _windowArmed = false;
@@ -348,7 +527,7 @@ void Pump::_watchSwitch()
         static_cast<uint32_t>(_nowMs - _windowStartedAt);
     if (elapsed >= _config.statusLimitMs)
     {
-      _enterFault();
+      _enterFault(module_protocol::kPumpFaultSlowStart);
     }
     return;
   }
@@ -480,6 +659,7 @@ void Pump::_enterOff()
   _cycledSinceOn = false;
   _phase = Phase::Off;
   _windowArmed = false;
+  _clearFaultWatch();
   _applyOutputs();
 }
 
@@ -507,18 +687,28 @@ void Pump::_enterRunning()
 }
 
 /**
- * Latches fault. Closes an open cycle. Enable low, yellow on.
+ * Latches fault with the first reason. A later call keeps that
+ * reason. Closes an open cycle. Enable low, yellow on.
  *
+ * @param reason Pump fault code. Not zero.
  * @return Nothing.
  */
-void Pump::_enterFault()
+void Pump::_enterFault(uint8_t reason)
 {
+  if (_phase == Phase::Fault)
+  {
+    return;
+  }
   if (_cycleOpen)
   {
     _closeCycle();
   }
+  _faultReason = reason;
   _phase = Phase::Fault;
   _windowArmed = false;
+  _overcurrentArmed = false;
+  _underArmed = false;
+  _stuckArmed = false;
   _applyOutputs();
 }
 

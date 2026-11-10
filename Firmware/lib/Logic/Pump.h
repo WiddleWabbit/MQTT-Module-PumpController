@@ -23,14 +23,25 @@ struct PumpConfig
   uint16_t millivoltsDen;
   uint16_t milliampsNum;
   uint16_t milliampsDen;
+  uint16_t overcurrentMilliamps;
+  uint32_t overcurrentLimitMs;
+  uint16_t undercurrentMilliamps;
+  uint32_t undercurrentLimitMs;
+  uint32_t stuckOnLimitMs;
 };
 
 /**
  * One pump on the LM5060. Enable is the MCU side of the pressure
  * AND gate. Held is enable high while nPGD is high and the motor
  * is not holding current: the pressure switch is doing its job.
- * A fault is current that stays up while nPGD stays high for
- * statusLimitMs. Running is enable high after nPGD has gone low.
+ * A fault latches the first reason: current up while nPGD stays
+ * high for statusLimitMs, current at or above overcurrentMilliamps
+ * for overcurrentLimitMs, that current followed by the terminal
+ * falling below settledMillivolts, current below
+ * undercurrentMilliamps while the terminal stays settled for
+ * undercurrentLimitMs, or the terminal staying settled while
+ * enable is low for stuckOnLimitMs. Running is enable high after
+ * nPGD has gone low.
  * The green lamp follows running. The yellow lamp follows fault.
  * Held and running are both reported as on.
  *
@@ -38,9 +49,9 @@ struct PumpConfig
  * when it falls through offMilliamps for offDebounceMs. Totals for
  * a cycle at least cycleMinMs long are written to the store.
  *
- * turnOn, turnOff, reset, state, and the three record reads may
- * run from the TWI interrupt. update runs from the main loop with
- * interrupts off. No Arduino types.
+ * turnOn, turnOff, reset, state, readFault, and the three record
+ * reads may run from the TWI interrupt. update runs from the main
+ * loop with interrupts off. No Arduino types.
  */
 class Pump
 {
@@ -59,8 +70,9 @@ public:
 
   /**
    * Loads the store on the first call. Samples the sense pair when
-   * a new one is ready, then nPGD, then the on-command age. Writes
-   * at most one changed totals byte. The caller must not run this
+   * a new one is ready, then the fault watches, then nPGD, then the
+   * on-command age. Writes at most one changed totals byte. The
+   * caller must not run this
    * concurrently with turnOn, turnOff, reset, or the record reads.
    *
    * @param nowMs Milliseconds from the same clock as the last call.
@@ -100,6 +112,15 @@ public:
    * @return Nothing.
    */
   void readTotals(uint8_t* dest) const;
+
+  /**
+   * Writes the GET_FAULT payload. dest holds 2 bytes: reason, then
+   * index. The pump index is 0. Reason 0 is no fault.
+   *
+   * @param dest Destination. Not retained.
+   * @return Nothing.
+   */
+  void readFault(uint8_t* dest) const;
 
   /**
    * Turns the switch on from off. While held or running, records
@@ -177,6 +198,37 @@ private:
   void _watchSwitch();
 
   /**
+   * Latches overcurrent from a sustained high sample or from a
+   * high sample followed by the terminal voltage falling.
+   *
+   * @return Nothing.
+   */
+  void _watchOvercurrent();
+
+  /**
+   * Latches undercurrent when the terminal stays settled and the
+   * current stays below the floor.
+   *
+   * @return Nothing.
+   */
+  void _watchUndercurrent();
+
+  /**
+   * Latches a stuck output when enable is low and the terminal
+   * stays settled.
+   *
+   * @return Nothing.
+   */
+  void _watchStuckOn();
+
+  /**
+   * Clears the fault reason and the fault-watch timers.
+   *
+   * @return Nothing.
+   */
+  void _clearFaultWatch();
+
+  /**
    * Records power-good time, the running minimum, and the average.
    *
    * @return Nothing.
@@ -205,11 +257,13 @@ private:
   void _enterRunning();
 
   /**
-   * Latches fault. Closes an open cycle. Enable low, yellow on.
+   * Latches fault with the first reason. A later call keeps that
+   * reason. Closes an open cycle. Enable low, yellow on.
    *
+   * @param reason Pump fault code. Not zero.
    * @return Nothing.
    */
-  void _enterFault();
+  void _enterFault(uint8_t reason);
 
   /**
    * Drives enable and both lamps from the phase.
@@ -343,6 +397,15 @@ private:
   volatile Phase _phase;
   volatile bool _windowArmed;
   volatile bool _npgdLow;
+  volatile uint8_t _faultReason;
+  bool _outputWasSettled;
+  bool _overcurrentSeen;
+  bool _overcurrentArmed;
+  bool _underArmed;
+  bool _stuckArmed;
+  uint32_t _overcurrentSinceMs;
+  uint32_t _underSinceMs;
+  uint32_t _stuckSinceMs;
 
   bool _storeLoaded;
   bool _senseFresh;

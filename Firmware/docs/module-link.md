@@ -9,16 +9,17 @@ this pump board. It listens at `0x0A` only while MOD is low, then
 keeps the assigned address. It reports the type and firmware version
 supplied at construction, and protocol version 1.
 
-`GET_PUMP_STATE`, `SET_PUMP`, and `RESET_PUMP` call the pump and reply
-with its state byte. `GET_PUMP_NOW`, `GET_PUMP_CYCLE`, and
-`GET_PUMP_TOTALS` are empty requests. They reply with the run record
-and do not refresh the on-command age. A payload on any of them is
-`BadLength`. A command this board does not implement returns
-`UnknownCmd`.
+`GET_FAULT` is the shared fault read. An empty request replies with
+the reason and index 0. `GET_PUMP_STATE`, `SET_PUMP`, and `RESET_PUMP`
+call the pump and reply with its state byte. `GET_PUMP_NOW`,
+`GET_PUMP_CYCLE`, and `GET_PUMP_TOTALS` are empty requests. They reply
+with the run record and do not refresh the on-command age. A payload
+on any of these reads is `BadLength`. A command this board does not
+implement returns `UnknownCmd`.
 
-The sketch reports firmware 2. The worked identity frame, and the
-firmware 1 frame the desktop test still checks, are on the reference
-page.
+The sketch reports board revision 2 and firmware revision 1. The
+worked identity frame, and the firmware 1 frame the desktop test
+still checks, are on the reference page.
 
 The module includes no Arduino headers.
 

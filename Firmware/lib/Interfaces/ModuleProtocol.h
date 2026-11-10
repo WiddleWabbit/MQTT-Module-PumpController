@@ -67,6 +67,12 @@ inline uint8_t crc8Smbus(const uint8_t* data, size_t length)
 constexpr uint8_t kCmdPing = 0x01;
 constexpr uint8_t kCmdGetIdentity = 0x02;
 constexpr uint8_t kCmdSetAddress = 0x03;
+// Empty request. Reply is the reason byte, then the 0-based index.
+// Reason 0 is no fault on every module type. A module defines its
+// own non-zero reasons.
+constexpr uint8_t kCmdGetFault = 0x04;
+constexpr uint8_t kFaultPayloadLen = 2;
+constexpr uint8_t kFaultNone = 0;
 constexpr uint8_t kCmdEcho = 0x40;
 
 // Sensor module (type 0x0200) commands. Other types are not required
@@ -124,6 +130,10 @@ constexpr uint8_t kPumpPhaseFault = 3;
 constexpr uint8_t kPumpFlagNpgdLow = 0x01;
 constexpr uint8_t kPumpFlagEnableHigh = 0x02;
 constexpr uint8_t kPumpFlagCycled = 0x04;
+constexpr uint8_t kPumpFaultSlowStart = 1;
+constexpr uint8_t kPumpFaultOvercurrent = 2;
+constexpr uint8_t kPumpFaultUndercurrent = 3;
+constexpr uint8_t kPumpFaultStuckOn = 4;
 
 // SET_ADDRESS on-wire size. length field = 3 (2 + 1-byte payload);
 // total frame = 4. Do not count the I2C 7-bit address as a frame byte.

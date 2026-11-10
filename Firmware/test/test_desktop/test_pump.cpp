@@ -37,6 +37,11 @@ PumpConfig makeConfig(uint32_t statusLimitMs, uint32_t commandLimitMs)
   config.millivoltsDen = 3;
   config.milliampsNum = 6600;
   config.milliampsDen = 1023;
+  config.overcurrentMilliamps = 5000;
+  config.overcurrentLimitMs = 60;
+  config.undercurrentMilliamps = 300;
+  config.undercurrentLimitMs = 1000;
+  config.stuckOnLimitMs = 100;
   return config;
 }
 
@@ -1407,6 +1412,311 @@ void testTruncatedSaveLeavesPreviousSlot()
 }
 
 /**
+ * 5000 mA for 60 ms latches overcurrent and drops enable. One
+ * millisecond earlier stays held. 775 counts is 5000 mA.
+ *
+ * @return Nothing.
+ */
+void testOvercurrentAtSixtyMsFaults()
+{
+  constexpr uint16_t kOverCounts = 775;
+  Rig rig;
+  rig.port.currentCounts = kOverCounts;
+  rig.port.voltageCounts = kRampCounts;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+
+  rig.pump.update(59);
+  expectHeld(rig);
+  rig.pump.update(60);
+
+  expectFault(rig);
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultOvercurrent, fault[0]);
+  TEST_ASSERT_EQUAL_UINT8(0, fault[1]);
+}
+
+/**
+ * A high sample followed by the terminal falling, while enable stays
+ * high, latches overcurrent before the 60 ms timer.
+ *
+ * @return Nothing.
+ */
+void testOvercurrentCollapseFaults()
+{
+  constexpr uint16_t kOverCounts = 775;
+  Rig rig;
+  rig.port.currentCounts = kOverCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+  expectRunning(rig);
+
+  rig.port.currentCounts = 0;
+  rig.port.voltageCounts = 0;
+  rig.pump.update(30);
+
+  expectFault(rig);
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultOvercurrent, fault[0]);
+}
+
+/**
+ * Current that falls back under 5000 mA while the terminal stays up
+ * ends the overcurrent episode. A later stop is not that fault.
+ *
+ * @return Nothing.
+ */
+void testOvercurrentClearsWhenRunContinues()
+{
+  constexpr uint16_t kOverCounts = 775;
+  Rig rig;
+  rig.port.currentCounts = kOverCounts;
+  rig.port.voltageCounts = kRampCounts;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(30);
+  expectRunning(rig);
+
+  rig.port.currentCounts = 0;
+  rig.port.voltageCounts = 0;
+  rig.port.statusLow = false;
+  rig.pump.update(40);
+  rig.pump.update(60);
+
+  expectHeld(rig);
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kFaultNone, fault[0]);
+}
+
+/**
+ * A normal run under 5000 mA can lose terminal voltage without an
+ * overcurrent fault.
+ *
+ * @return Nothing.
+ */
+void testNormalStopIsNotOvercurrent()
+{
+  Rig rig;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+  rig.pump.update(500);
+
+  rig.port.currentCounts = 0;
+  rig.port.voltageCounts = 0;
+  rig.port.statusLow = false;
+  rig.pump.update(500);
+  rig.pump.update(520);
+
+  expectHeld(rig);
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kFaultNone, fault[0]);
+}
+
+/**
+ * The overcurrent window uses unsigned subtraction across the wrap.
+ *
+ * @return Nothing.
+ */
+void testOvercurrentUsesUnsignedWrap()
+{
+  constexpr uint32_t kStart = 0xFFFFFFF0;
+  constexpr uint16_t kOverCounts = 775;
+  Rig rig;
+  rig.port.currentCounts = kOverCounts;
+  rig.pump.update(kStart);
+  rig.pump.turnOn();
+  rig.pump.update(kStart);
+
+  rig.pump.update(kStart + 59);
+  expectHeld(rig);
+  rig.pump.update(kStart + 60);
+  expectFault(rig);
+}
+
+/**
+ * Terminal voltage at 10 V with current under 300 mA for 1 s latches
+ * undercurrent. One millisecond earlier stays running.
+ *
+ * @return Nothing.
+ */
+void testUndercurrentAtOneSecondFaults()
+{
+  Rig rig;
+  rig.port.currentCounts = 0;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+
+  rig.pump.update(999);
+  expectRunning(rig);
+  rig.pump.update(1000);
+
+  expectFault(rig);
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultUndercurrent, fault[0]);
+  TEST_ASSERT_EQUAL_UINT8(0, fault[1]);
+}
+
+/**
+ * Voltage falling below 10 V restarts the undercurrent window.
+ *
+ * @return Nothing.
+ */
+void testUndercurrentResetsWhenVoltageFalls()
+{
+  Rig rig;
+  rig.port.currentCounts = 0;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+  rig.pump.update(500);
+
+  rig.port.voltageCounts = 0;
+  rig.pump.update(600);
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(600);
+  rig.pump.update(1599);
+  expectRunning(rig);
+  rig.pump.update(1600);
+  expectFault(rig);
+}
+
+/**
+ * 303 mA at 12 V is conducting, so the undercurrent window stays idle.
+ *
+ * @return Nothing.
+ */
+void testConductingCurrentIsNotUndercurrent()
+{
+  constexpr uint16_t kConductingCounts = 47;
+  Rig rig;
+  rig.port.currentCounts = kConductingCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+  rig.pump.update(1000);
+
+  expectRunning(rig);
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kFaultNone, fault[0]);
+}
+
+/**
+ * Enable low with the terminal still at 10 V for 100 ms latches
+ * stuck on. One millisecond earlier stays off.
+ *
+ * @return Nothing.
+ */
+void testStuckOnAtOneHundredMsFaults()
+{
+  Rig rig;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(0);
+  rig.pump.update(99);
+  expectIdle(rig);
+  rig.pump.update(100);
+
+  expectFault(rig);
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultStuckOn, fault[0]);
+}
+
+/**
+ * The terminal falling restarts the stuck-on window.
+ *
+ * @return Nothing.
+ */
+void testStuckOnResetsWhenVoltageFalls()
+{
+  Rig rig;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(0);
+  rig.pump.update(50);
+  rig.port.voltageCounts = 0;
+  rig.pump.update(50);
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(50);
+  rig.pump.update(149);
+  expectIdle(rig);
+  rig.pump.update(150);
+  expectFault(rig);
+}
+
+/**
+ * The loaded nPGD window reports slow start, and that reason stays
+ * when the overcurrent sample arrives later.
+ *
+ * @return Nothing.
+ */
+void testSlowStartReasonStays()
+{
+  Rig rig;
+  armLoaded(rig, 0);
+  rig.pump.update(kLimitMs);
+
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart, fault[0]);
+
+  rig.port.currentCounts = 775;
+  rig.pump.update(kLimitMs + 60);
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart, fault[0]);
+  expectFault(rig);
+}
+
+/**
+ * reset clears the reason and a later turnOn is accepted.
+ *
+ * @return Nothing.
+ */
+void testResetClearsFaultReason()
+{
+  Rig rig;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(0);
+  rig.pump.update(100);
+  expectFault(rig);
+
+  rig.pump.reset();
+  uint8_t fault[2];
+  rig.pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kFaultNone, fault[0]);
+  expectIdle(rig);
+
+  rig.port.voltageCounts = 0;
+  rig.port.statusLow = true;
+  rig.pump.turnOn();
+  expectRunning(rig);
+}
+
+/**
  * Runs the pump state-machine tests. The desktop main() calls this.
  *
  * @return Nothing.
@@ -1460,4 +1770,16 @@ void runPumpTests()
   RUN_TEST(testLaterLongCyclePersistsEarlierTotals);
   RUN_TEST(testTruncatedSaveDoesNotLoad);
   RUN_TEST(testTruncatedSaveLeavesPreviousSlot);
+  RUN_TEST(testOvercurrentAtSixtyMsFaults);
+  RUN_TEST(testOvercurrentCollapseFaults);
+  RUN_TEST(testOvercurrentClearsWhenRunContinues);
+  RUN_TEST(testNormalStopIsNotOvercurrent);
+  RUN_TEST(testOvercurrentUsesUnsignedWrap);
+  RUN_TEST(testUndercurrentAtOneSecondFaults);
+  RUN_TEST(testUndercurrentResetsWhenVoltageFalls);
+  RUN_TEST(testConductingCurrentIsNotUndercurrent);
+  RUN_TEST(testStuckOnAtOneHundredMsFaults);
+  RUN_TEST(testStuckOnResetsWhenVoltageFalls);
+  RUN_TEST(testSlowStartReasonStays);
+  RUN_TEST(testResetClearsFaultReason);
 }

@@ -62,6 +62,8 @@ On the AVR the handler runs from the TWI interrupt. On the desktop,
 | `PING` | any payload | `BadLength` |
 | `GET_IDENTITY` | empty payload | type, protocol 1, firmware version |
 | `GET_IDENTITY` | any payload | `BadLength` |
+| `GET_FAULT` | empty payload | `Ok` and 2 bytes: reason, then index. Reason 0 is no fault. This pump's index is 0. Does not refresh the on-command age |
+| `GET_FAULT` | any payload | `BadLength`. The pump is unchanged |
 | `SET_ADDRESS` | enabled, not yet assigned, one payload byte, address `0x10`–`0x6F` | `setAddress`, no reply. Slot 1 is `03 03 10 F2` |
 | `SET_ADDRESS` | payload length is not 1 | `BadLength`, no commit |
 | `SET_ADDRESS` | disabled, already assigned, or address outside `0x10`–`0x6F` | no reply, no commit |
@@ -81,10 +83,14 @@ On the AVR the handler runs from the TWI interrupt. On the desktop,
 
 Identity payload, big-endian: type high, type low, `kProtocolVersion`,
 firmware high, firmware low. `kIdentityPayloadLen` is 5. The sketch
-passes firmware 2. For `kTypePumpModule`, protocol 1, and firmware
-`0x0002` the worked frame is `07 00 03 00 01 00 02 D0`. The desktop
-identity test still uses firmware `0x0001`, frame
-`07 00 03 00 01 00 01 D9`.
+passes board revision 2 and firmware revision 1, packed as
+`0x0201`. For `kTypePumpModule` and protocol 1 the worked frame is
+`07 00 03 00 01 02 01 F3`. The desktop identity test still uses
+firmware `0x0001`, frame `07 00 03 00 01 00 01 D9`.
+
+`GET_FAULT` reasons for this pump are slow start `1`, overcurrent
+`2`, undercurrent `3`, and stuck on `4`. The rules are on the
+[pump reference](pump.md).
 
 `GET_PUMP_NOW` is 8 bytes, big-endian:
 
@@ -174,6 +180,10 @@ values it was given.
 | `testGetPumpNowReportsHeldSample` | A held 12000 mV / 4000 mA sample. Lifetime peaks are in totals. Completed counts stay zero |
 | `testGetPumpRecordsRejectPayload` | A payload on any record read is `BadLength`. The pump stays off |
 | `testGetPumpRecordsDoNotRefreshCommandAge` | The three reads, including a rejected one, leave the command age on the last `SET` on |
+| `testGetFaultWhenIdle` | `GET_FAULT` before a fault is reason 0 and index 0 |
+| `testGetFaultReportsSlowStart` | A loaded start that misses power-good reports slow start |
+| `testGetFaultRejectsPayload` | A payload is `BadLength`. The pump stays off |
+| `testGetFaultDoesNotRefreshCommandAge` | `GET_FAULT`, including a rejected one, leaves the command age on the last `SET` on |
 
 Pump state-machine cases are on the [pump reference](pump.md).
 `test_module_link.cpp` calls `runPumpTests()`.
