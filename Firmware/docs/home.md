@@ -10,7 +10,7 @@ Each of these is a short page: what that part creates, and what one
 pass does.
 
 1. [Architecture](architecture.md) — the loop, and who owns whom.
-2. [Pump](pump.md) — the switch, `nPGD`, and the lamps.
+2. [Pump](pump.md) — the switch, the sense pair, and the run record.
 3. [Module link](module-link.md) — the MOD gate, then one master write.
 4. [Slave port](slave-port.md) — TWI0 on the AVR, and the desktop fake.
 

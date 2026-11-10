@@ -10,7 +10,7 @@
  * the master-write handler. The slave stays disabled until update().
  *
  * @param port Port that enables TWI and stores replies.
- * @param pump Pump commanded by GET, SET, and RESET.
+ * @param pump Pump commanded by the pump GET, SET, and RESET commands.
  * @param typeId Module type reported by GET_IDENTITY.
  * @param firmwareVersion Firmware version reported by GET_IDENTITY.
  */
@@ -205,6 +205,48 @@ void ModuleLink::_handleCommand(uint8_t command, const uint8_t* payload,
       }
       _pump.reset();
       _replyPumpState();
+      return;
+
+    case module_protocol::kCmdGetPumpNow:
+      if (payloadLen != 0)
+      {
+        _replyStatus(module_protocol::kStatusBadLength);
+        return;
+      }
+      {
+        uint8_t now[module_protocol::kPumpNowPayloadLen];
+        _pump.readNow(now);
+        _replyPayload(module_protocol::kStatusOk, now,
+                      module_protocol::kPumpNowPayloadLen);
+      }
+      return;
+
+    case module_protocol::kCmdGetPumpCycle:
+      if (payloadLen != 0)
+      {
+        _replyStatus(module_protocol::kStatusBadLength);
+        return;
+      }
+      {
+        uint8_t cycle[module_protocol::kPumpCyclePayloadLen];
+        _pump.readCycle(cycle);
+        _replyPayload(module_protocol::kStatusOk, cycle,
+                      module_protocol::kPumpCyclePayloadLen);
+      }
+      return;
+
+    case module_protocol::kCmdGetPumpTotals:
+      if (payloadLen != 0)
+      {
+        _replyStatus(module_protocol::kStatusBadLength);
+        return;
+      }
+      {
+        uint8_t totals[module_protocol::kPumpTotalsPayloadLen];
+        _pump.readTotals(totals);
+        _replyPayload(module_protocol::kStatusOk, totals,
+                      module_protocol::kPumpTotalsPayloadLen);
+      }
       return;
 
     case module_protocol::kCmdSetAddress:

@@ -21,7 +21,7 @@ public:
    * the master-write handler. The slave stays disabled until update().
    *
    * @param port Port that enables TWI and stores replies.
-   * @param pump Pump commanded by GET, SET, and RESET.
+   * @param pump Pump commanded by the pump GET, SET, and RESET commands.
    * @param typeId Module type reported by GET_IDENTITY.
    * @param firmwareVersion Firmware version reported by GET_IDENTITY.
    */

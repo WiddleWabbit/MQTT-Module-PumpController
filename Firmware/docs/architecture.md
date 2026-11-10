@@ -28,25 +28,28 @@ for the pump. Arduino `Wire` is that peripheral. `AvrTwi0Slave` calls
 ```text
 main.cpp
   AvrTwi0Slave    TWI0 adapter for IModuleSlavePort
-  AvrPumpPort     enable, nPGD, and the two lamps
-  Pump            switch, fault latch, and lamps
+  AvrPumpPort     enable, nPGD, lamps, and the sense pair
+  AvrPumpStore    EEPROM totals
+  Pump            switch, fault latch, lamps, and the run record
   ModuleLink      MOD gate, frames, and replies
 ```
 
 `main.cpp` passes `MODULE_TYPE` and `FIRMWARE_VERSION` into the link,
-passes the pump into the link, and passes `PUMP_STATUS_LIMIT_MS` and
-`PUMP_COMMAND_LIMIT_MS` into the pump. Pin numbers stay in `main.cpp`.
+passes the pump into the link, and passes the port, the store, and
+the `PumpConfig` into the pump. Pin numbers and the scale stay in
+`main.cpp`.
 
-`lib/Interfaces/` holds `IModuleSlavePort`, `IPumpPort`, and the copied
-`ModuleProtocol.h`. `lib/Drivers/` holds the AVR adapters. `lib/Logic/`
-holds the pump and the link. Desktop fakes live in
-`test/test_desktop/fakes/`.
+`lib/Interfaces/` holds `IModuleSlavePort`, `IPumpPort`, `IPumpStore`,
+and the copied `ModuleProtocol.h`. `lib/Drivers/` holds the AVR
+adapters. `lib/Logic/` holds the pump and the link. Desktop fakes
+live in `test/test_desktop/fakes/`.
 
 ## One update
 
 `setup()` calls `AvrPumpPort::begin()`, which drives enable and both
-lamps low and leaves `nPGD` as an input. It then drives `SNS_PIN` low
-and holds `MOD_PIN` as an input with pull-up.
+lamps low, leaves `nPGD` as an input, and starts the first sense
+pair. It then drives `SNS_PIN` low and holds `MOD_PIN` as an input
+with pull-up.
 
 ```mermaid
 flowchart TD
@@ -55,8 +58,10 @@ flowchart TD
   read --> upd["moduleLink.update(modIsLow)"]
 ```
 
-`pump.update` runs with interrupts off. `GET_PUMP_STATE`, `SET_PUMP`,
-and `RESET_PUMP` call the pump from the TWI interrupt.
+`pump.update` runs with interrupts off. The pump commands and the
+three record reads call the pump from the TWI interrupt. One
+`update` may program a single changed EEPROM byte, which can stall
+the CPU for that program.
 
 `loop()` does not block, so a low MOD is seen inside `kModGateMaxMs`.
 While the module has no address, MOD low enables `0x0A` and MOD high
@@ -66,13 +71,13 @@ when MOD rises.
 ## What is stored, and who reads it
 
 Each pass reads `MOD_PIN` and passes that level to the link. The pump
-reads `nPGD` on its own port. The motherboard reads the sense line,
-which `SNS_PIN` holds low.
+reads `nPGD` and, when a pair is ready, the sense pins on its own
+port. The motherboard reads the sense line, which `SNS_PIN` holds low.
 
-The pump stores its phase, the start of the `nPGD` window, and the
-time of the last on command. The link
-stores the address and whether it has been assigned. The TWI0 adapter
-stores the reply the host clocks out. Those stores are on the
+The pump stores its phase, the run record, and the on-command time.
+Totals that have been saved also live in EEPROM. The link stores the
+address and whether it has been assigned. The TWI0 adapter stores the
+reply the host clocks out. Those stores are on the
 [pump](pump.md), [module link](module-link.md), and
 [slave port](slave-port.md) pages.
 

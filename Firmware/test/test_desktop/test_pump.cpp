@@ -3,30 +3,61 @@
 #include "ModuleProtocol.h"
 #include "Pump.h"
 #include "fakes/FakePumpPort.h"
+#include "fakes/FakePumpStore.h"
 
 namespace
 {
 
 constexpr uint32_t kLimitMs = 300;
 constexpr uint32_t kCommandLimitMs = 3UL * 60UL * 1000UL;
+constexpr uint16_t kLoadedCounts = 620;
+constexpr uint16_t kTwelveVoltCounts = 720;
+constexpr uint16_t kTenVoltCounts = 600;
+constexpr uint16_t kRampCounts = 100;
 
 /**
- * One pump and the port it drives.
+ * Product scale and limits. A test overrides a field when the
+ * constructor argument is what it is checking.
+ *
+ * @param statusLimitMs Load-fault window.
+ * @param commandLimitMs On-command age.
+ * @return Settings copied into the pump.
+ */
+PumpConfig makeConfig(uint32_t statusLimitMs, uint32_t commandLimitMs)
+{
+  PumpConfig config;
+  config.statusLimitMs = statusLimitMs;
+  config.commandLimitMs = commandLimitMs;
+  config.onMilliamps = 300;
+  config.offMilliamps = 150;
+  config.offDebounceMs = 20;
+  config.settledMillivolts = 10000;
+  config.cycleMinMs = 200;
+  config.millivoltsNum = 50;
+  config.millivoltsDen = 3;
+  config.milliampsNum = 6600;
+  config.milliampsDen = 1023;
+  return config;
+}
+
+/**
+ * One pump and the fakes it drives.
  */
 struct Rig
 {
   FakePumpPort port;
+  FakePumpStore store;
   Pump pump;
 
   /**
-   * Builds a pump with the given nPGD and on-command limits.
+   * Builds a pump with the given limits and the product scale.
    *
-   * @param limitMs High-nPGD window passed to the pump.
-   * @param commandLimitMs On-command age passed to the pump.
+   * @param limitMs Load-fault window.
+   * @param commandLimitMs On-command age.
    */
   explicit Rig(uint32_t limitMs = kLimitMs,
                uint32_t commandLimitMs = kCommandLimitMs)
-    : pump(port, limitMs, commandLimitMs)
+    : pump(port, store, makeConfig(limitMs, commandLimitMs))
   {
   }
 };
@@ -46,12 +77,13 @@ void expectIdle(const Rig& rig)
 }
 
 /**
- * Enable high, both lamps off, state on. nPGD has not gone low yet.
+ * Enable high, both lamps off, state on. Held, or running that has
+ * not been sampled yet, both look like this until the phase moves.
  *
  * @param rig Pump under test.
  * @return Nothing.
  */
-void expectStarting(const Rig& rig)
+void expectHeld(const Rig& rig)
 {
   TEST_ASSERT_TRUE(rig.port.enable);
   TEST_ASSERT_FALSE(rig.port.runningLamp);
@@ -87,6 +119,80 @@ void expectFault(const Rig& rig)
   TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateFault, rig.pump.state());
 }
 
+/**
+ * Samples a loaded pump and arms the load-fault window at nowMs.
+ * nPGD stays high. The arming sample does not fault.
+ *
+ * @param rig Pump under test.
+ * @param nowMs Sample time. turnOn uses the same stamp.
+ * @return Nothing.
+ */
+void armLoaded(Rig& rig, uint32_t nowMs)
+{
+  rig.port.currentCounts = kLoadedCounts;
+  rig.pump.update(nowMs);
+  rig.pump.turnOn();
+  rig.pump.update(nowMs);
+}
+
+/**
+ * Programs one changed byte per call until a queued save can finish.
+ *
+ * @param pump Pump whose store is being flushed.
+ * @param nowMs Stamp kept inside the command age.
+ * @return Nothing.
+ */
+void flushStore(Pump& pump, uint32_t nowMs)
+{
+  for (uint8_t step = 0; step < 40; ++step)
+  {
+    pump.update(nowMs);
+  }
+}
+
+/**
+ * Reads a big-endian uint16.
+ *
+ * @param bytes Two bytes, high first.
+ * @return Host value.
+ */
+uint16_t readBeU16(const uint8_t* bytes)
+{
+  return static_cast<uint16_t>(
+      (static_cast<uint16_t>(bytes[0]) << 8) | bytes[1]);
+}
+
+/**
+ * Reads a big-endian uint32.
+ *
+ * @param bytes Four bytes, high first.
+ * @return Host value.
+ */
+uint32_t readBeU32(const uint8_t* bytes)
+{
+  return (static_cast<uint32_t>(bytes[0]) << 24) |
+         (static_cast<uint32_t>(bytes[1]) << 16) |
+         (static_cast<uint32_t>(bytes[2]) << 8) |
+         static_cast<uint32_t>(bytes[3]);
+}
+
+/**
+ * Copies the three record payloads.
+ *
+ * @param pump Pump to read.
+ * @param nowPayload Eight-byte destination.
+ * @param cyclePayload Sixteen-byte destination.
+ * @param totalsPayload Sixteen-byte destination.
+ * @return Nothing.
+ */
+void readRecords(const Pump& pump, uint8_t* nowPayload, uint8_t* cyclePayload,
+                 uint8_t* totalsPayload)
+{
+  pump.readNow(nowPayload);
+  pump.readCycle(cyclePayload);
+  pump.readTotals(totalsPayload);
+}
+
 }
 
 /**
@@ -106,38 +212,41 @@ void testBootWithStatusHighStaysOff()
 }
 
 /**
- * turnOn reports on and holds both lamps off until the limit.
+ * turnOn with no current reports on and holds both lamps off.
+ * The old nPGD-only limit does not fault that hold.
  *
  * @return Nothing.
  */
-void testTurnOnBeforeLimitReportsOnWithLampsOff()
+void testZeroCurrentStaysHeldPastTheLimit()
 {
   Rig rig;
   rig.pump.update(1000);
-
   rig.pump.turnOn();
 
-  expectStarting(rig);
+  expectHeld(rig);
   rig.pump.update(1000 + kLimitMs - 1);
-  expectStarting(rig);
+  expectHeld(rig);
+  rig.pump.update(1000 + kLimitMs + 5000);
+  expectHeld(rig);
 }
 
 /**
- * A second turnOn while starting does not move the window.
+ * A second turnOn while the load window is running does not move
+ * it and does not call setEnable.
  *
  * @return Nothing.
  */
 void testSecondTurnOnDoesNotRestartTheWindow()
 {
   Rig rig;
-  rig.pump.update(1000);
-  rig.pump.turnOn();
-  rig.pump.update(1200);
+  armLoaded(rig, 1000);
+  const uint32_t writes = rig.port.enableWrites;
 
   rig.pump.turnOn();
 
+  TEST_ASSERT_EQUAL_UINT32(writes, rig.port.enableWrites);
   rig.pump.update(1000 + kLimitMs - 1);
-  expectStarting(rig);
+  expectHeld(rig);
   rig.pump.update(1000 + kLimitMs);
   expectFault(rig);
 }
@@ -152,7 +261,7 @@ void testStatusLowDuringStartTurnsGreenOn()
   Rig rig;
   rig.pump.update(0);
   rig.pump.turnOn();
-  expectStarting(rig);
+  expectHeld(rig);
 
   rig.port.statusLow = true;
   rig.pump.update(1);
@@ -161,16 +270,16 @@ void testStatusLowDuringStartTurnsGreenOn()
 }
 
 /**
- * nPGD still high at the limit latches a fault. A later low stays
- * faulted, with enable held low and the yellow lamp on.
+ * Loaded current with nPGD still high at the limit latches a fault.
+ * A later low stays faulted, with enable held low and the yellow
+ * lamp on.
  *
  * @return Nothing.
  */
 void testStatusHighThroughLimitFaults()
 {
   Rig rig;
-  rig.pump.update(0);
-  rig.pump.turnOn();
+  armLoaded(rig, 0);
 
   rig.pump.update(kLimitMs);
 
@@ -181,19 +290,37 @@ void testStatusHighThroughLimitFaults()
 }
 
 /**
- * The last millisecond before the limit is still starting.
+ * The last millisecond before the limit is still held.
  *
  * @return Nothing.
  */
 void testLimitBoundary()
 {
   Rig rig;
-  rig.pump.update(1000);
-  rig.pump.turnOn();
+  armLoaded(rig, 1000);
 
   rig.pump.update(1000 + kLimitMs - 1);
-  expectStarting(rig);
+  expectHeld(rig);
   rig.pump.update(1000 + kLimitMs);
+  expectFault(rig);
+}
+
+/**
+ * One sample at the limit only arms the window. The next full
+ * window is what faults.
+ *
+ * @return Nothing.
+ */
+void testUnarmedLimitSampleDoesNotFault()
+{
+  Rig rig;
+  rig.pump.update(0);
+  rig.port.currentCounts = kLoadedCounts;
+  rig.pump.turnOn();
+
+  rig.pump.update(kLimitMs);
+  expectHeld(rig);
+  rig.pump.update(kLimitMs + kLimitMs);
   expectFault(rig);
 }
 
@@ -216,8 +343,8 @@ void testStatusLowAtTurnOnIsRunning()
 }
 
 /**
- * A high that returns low inside the run window stays on. The next
- * high window starts again, and a full window then faults.
+ * A loaded high that returns low inside the run window stays on.
+ * The next high window starts again, and a full window then faults.
  *
  * @return Nothing.
  */
@@ -225,8 +352,10 @@ void testStatusBlipWhileRunningStaysOn()
 {
   Rig rig;
   rig.pump.update(0);
+  rig.port.currentCounts = kLoadedCounts;
   rig.port.statusLow = true;
   rig.pump.turnOn();
+  rig.pump.update(0);
   expectRunning(rig);
 
   rig.port.statusLow = false;
@@ -247,7 +376,8 @@ void testStatusBlipWhileRunningStaysOn()
 }
 
 /**
- * nPGD high for the whole run window latches a fault.
+ * nPGD high for the whole run window, while current stays up,
+ * latches a fault.
  *
  * @return Nothing.
  */
@@ -255,8 +385,10 @@ void testStatusHighWhileRunningFaults()
 {
   Rig rig;
   rig.pump.update(0);
+  rig.port.currentCounts = kLoadedCounts;
   rig.port.statusLow = true;
   rig.pump.turnOn();
+  rig.pump.update(0);
 
   rig.port.statusLow = false;
   rig.pump.update(10);
@@ -267,6 +399,27 @@ void testStatusHighWhileRunningFaults()
 }
 
 /**
+ * nPGD rising with no open cycle leaves held at once. It does not
+ * wait out the load window.
+ *
+ * @return Nothing.
+ */
+void testRunningWithNoCurrentGoesHeldWhenNpgdRises()
+{
+  Rig rig;
+  rig.pump.update(0);
+  rig.port.statusLow = true;
+  rig.pump.turnOn();
+  expectRunning(rig);
+
+  rig.port.statusLow = false;
+  rig.pump.update(10);
+  expectHeld(rig);
+  rig.pump.update(10 + kLimitMs);
+  expectHeld(rig);
+}
+
+/**
  * turnOn and turnOff leave a fault latched and enable low.
  *
  * @return Nothing.
@@ -274,8 +427,7 @@ void testStatusHighWhileRunningFaults()
 void testCommandsWhileFaultedAreIgnored()
 {
   Rig rig;
-  rig.pump.update(0);
-  rig.pump.turnOn();
+  armLoaded(rig, 0);
   rig.pump.update(kLimitMs);
   expectFault(rig);
 
@@ -286,16 +438,16 @@ void testCommandsWhileFaultedAreIgnored()
 }
 
 /**
- * turnOff from starting or on drops enable. A later high is idle.
+ * turnOff from held or running drops enable. A later high is idle.
  *
  * @return Nothing.
  */
-void testTurnOffFromStartingAndOn()
+void testTurnOffFromHeldAndRunning()
 {
   Rig rig;
   rig.pump.update(0);
   rig.pump.turnOn();
-  expectStarting(rig);
+  expectHeld(rig);
 
   rig.pump.turnOff();
   expectIdle(rig);
@@ -313,25 +465,25 @@ void testTurnOffFromStartingAndOn()
 }
 
 /**
- * reset from fault, on, and off returns to off. turnOn works again,
- * including while nPGD is still high.
+ * reset from fault, running, and off returns to off. turnOn works
+ * again, including while nPGD is still high.
  *
  * @return Nothing.
  */
 void testResetFromFaultOnAndOff()
 {
   Rig rig;
-  rig.pump.update(0);
-  rig.pump.turnOn();
+  armLoaded(rig, 0);
   rig.pump.update(kLimitMs);
   expectFault(rig);
 
   rig.pump.reset();
   expectIdle(rig);
 
+  rig.port.currentCounts = 0;
   rig.pump.update(5000);
   rig.pump.turnOn();
-  expectStarting(rig);
+  expectHeld(rig);
 
   rig.port.statusLow = true;
   rig.pump.update(5001);
@@ -356,11 +508,10 @@ void testLimitUsesUnsignedWrap()
 {
   constexpr uint32_t kStart = 0xFFFFFFF0;
   Rig rig;
-  rig.pump.update(kStart);
-  rig.pump.turnOn();
+  armLoaded(rig, kStart);
 
   rig.pump.update(kStart + kLimitMs - 1);
-  expectStarting(rig);
+  expectHeld(rig);
   rig.pump.update(kStart + kLimitMs);
   expectFault(rig);
 }
@@ -374,11 +525,10 @@ void testStatusLimitIsTheConstructorArgument()
 {
   constexpr uint32_t kShortMs = 50;
   Rig rig(kShortMs);
-  rig.pump.update(10);
-  rig.pump.turnOn();
+  armLoaded(rig, 10);
 
   rig.pump.update(10 + kShortMs - 1);
-  expectStarting(rig);
+  expectHeld(rig);
   rig.pump.update(10 + kShortMs);
   expectFault(rig);
 }
@@ -434,23 +584,23 @@ void testRepeatedOnExtendsCommandAge()
 }
 
 /**
- * A second turnOn while starting leaves enable high and does not
+ * A second turnOn while held leaves enable high and does not
  * call setEnable again.
  *
  * @return Nothing.
  */
-void testRepeatedOnWhileStartingLeavesEnableHigh()
+void testRepeatedOnWhileHeldLeavesEnableHigh()
 {
   Rig rig;
   rig.pump.update(1000);
   rig.pump.turnOn();
   const uint32_t writes = rig.port.enableWrites;
-  expectStarting(rig);
+  expectHeld(rig);
 
   rig.pump.turnOn();
 
   TEST_ASSERT_EQUAL_UINT32(writes, rig.port.enableWrites);
-  expectStarting(rig);
+  expectHeld(rig);
 }
 
 /**
@@ -473,12 +623,12 @@ void testCommandLimitIsTheConstructorArgument()
 }
 
 /**
- * Starting turns off when the on command ages out before nPGD
- * has been high for the status limit.
+ * Held turns off when the on command ages out. No current means
+ * there is no load fault to win instead.
  *
  * @return Nothing.
  */
-void testCommandAgeWhileStartingTurnsOff()
+void testCommandAgeWhileHeldTurnsOff()
 {
   constexpr uint32_t kShortMs = 100;
   Rig rig(kLimitMs, kShortMs);
@@ -486,7 +636,7 @@ void testCommandAgeWhileStartingTurnsOff()
   rig.pump.turnOn();
 
   rig.pump.update(kShortMs - 1);
-  expectStarting(rig);
+  expectHeld(rig);
   rig.pump.update(kShortMs);
   expectIdle(rig);
 }
@@ -503,7 +653,7 @@ void testStatusLowDoesNotRefreshCommandAge()
   Rig rig(kLimitMs, kShortMs);
   rig.pump.update(0);
   rig.pump.turnOn();
-  expectStarting(rig);
+  expectHeld(rig);
 
   rig.port.statusLow = true;
   rig.pump.update(500);
@@ -515,12 +665,28 @@ void testStatusLowDoesNotRefreshCommandAge()
 }
 
 /**
- * When the status limit and the on-command age elapse on the same
- * sample, the high nPGD stays a fault.
+ * When the load window and the on-command age elapse on the same
+ * sample, the loaded high nPGD stays a fault.
  *
  * @return Nothing.
  */
 void testStatusFaultWinsOnTheSharedInstant()
+{
+  constexpr uint32_t kSharedMs = 100;
+  Rig rig(kSharedMs, kSharedMs);
+  armLoaded(rig, 0);
+
+  rig.pump.update(kSharedMs);
+
+  expectFault(rig);
+}
+
+/**
+ * With no current, that same instant is just the command age.
+ *
+ * @return Nothing.
+ */
+void testSharedInstantWithNoCurrentTurnsOff()
 {
   constexpr uint32_t kSharedMs = 100;
   Rig rig(kSharedMs, kSharedMs);
@@ -529,7 +695,7 @@ void testStatusFaultWinsOnTheSharedInstant()
 
   rig.pump.update(kSharedMs);
 
-  expectFault(rig);
+  expectIdle(rig);
 }
 
 /**
@@ -541,8 +707,7 @@ void testStatusFaultWinsOnTheSharedInstant()
 void testCommandAgeLeavesFaultLatched()
 {
   Rig rig;
-  rig.pump.update(0);
-  rig.pump.turnOn();
+  armLoaded(rig, 0);
   rig.pump.update(kLimitMs);
   expectFault(rig);
 
@@ -593,6 +758,655 @@ void testTurnOnAfterCommandAge()
 }
 
 /**
+ * Held for a long time at no current still starts cleanly when
+ * current arrives and nPGD then falls.
+ *
+ * @return Nothing.
+ */
+void testHeldThenCurrentRiseStartsClean()
+{
+  Rig rig;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(30000);
+  expectHeld(rig);
+
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kRampCounts;
+  rig.pump.update(30000);
+  expectHeld(rig);
+
+  rig.port.statusLow = true;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(30010);
+  expectRunning(rig);
+
+  uint8_t cycle[16];
+  rig.pump.readCycle(cycle);
+  TEST_ASSERT_EQUAL_UINT16(10, readBeU16(cycle + 10));
+}
+
+/**
+ * 4 A and nPGD low inside the load window is running, green on,
+ * and the cycle is open.
+ *
+ * @return Nothing.
+ */
+void testLoadedCurrentAndNpgdLowRuns()
+{
+  Rig rig;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  armLoaded(rig, 0);
+  expectHeld(rig);
+
+  rig.port.statusLow = true;
+  rig.pump.update(100);
+
+  expectRunning(rig);
+  uint8_t now[8];
+  rig.pump.readNow(now);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpPhaseRunning, now[0]);
+  const uint8_t flags = static_cast<uint8_t>(
+      module_protocol::kPumpFlagNpgdLow |
+      module_protocol::kPumpFlagEnableHigh);
+  TEST_ASSERT_EQUAL_UINT8(flags, now[1]);
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(now + 2));
+  TEST_ASSERT_EQUAL_UINT16(4000, readBeU16(now + 4));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(now + 6));
+}
+
+/**
+ * A current blip that ends before nPGD goes low is one failed
+ * start. The phase stays held and the completed totals stay zero.
+ *
+ * @return Nothing.
+ */
+void testCurrentBlipBeforeNpgdIsFailedStart()
+{
+  Rig rig;
+  armLoaded(rig, 1000);
+  rig.port.currentCounts = 0;
+  rig.pump.update(1000);
+  rig.pump.update(1020);
+
+  expectHeld(rig);
+  rig.pump.update(1000 + kLimitMs);
+  expectHeld(rig);
+
+  uint8_t totals[16];
+  rig.pump.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(0, readBeU32(totals));
+  TEST_ASSERT_EQUAL_UINT32(0, readBeU32(totals + 4));
+  TEST_ASSERT_EQUAL_UINT16(1, readBeU16(totals + 12));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(totals + 14));
+}
+
+/**
+ * Current falling while nPGD stays low closes the cycle and leaves
+ * the green lamp on.
+ *
+ * @return Nothing.
+ */
+void testCurrentFallWithNpgdLowStaysRunning()
+{
+  Rig rig;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(1000);
+
+  rig.port.currentCounts = 0;
+  rig.pump.update(1000);
+  expectRunning(rig);
+  rig.pump.update(1020);
+
+  expectRunning(rig);
+  uint8_t totals[16];
+  rig.pump.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(totals + 12));
+}
+
+/**
+ * A run that reaches power-good, then loses current and nPGD,
+ * returns to held with the cycle record stored.
+ *
+ * @return Nothing.
+ */
+void testRunClosesIntoHeldWithRecord()
+{
+  Rig rig;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kRampCounts;
+  rig.pump.update(1000);
+
+  rig.port.statusLow = true;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(1009);
+
+  rig.port.voltageCounts = kTenVoltCounts;
+  rig.pump.update(1020);
+
+  rig.port.currentCounts = 0;
+  rig.port.statusLow = false;
+  rig.pump.update(1020);
+  expectRunning(rig);
+  rig.pump.update(1200);
+
+  expectHeld(rig);
+  uint8_t now[8];
+  uint8_t cycle[16];
+  uint8_t totals[16];
+  readRecords(rig.pump, now, cycle, totals);
+
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpPhaseHeld, now[0]);
+  const uint8_t flags = static_cast<uint8_t>(
+      module_protocol::kPumpFlagEnableHigh |
+      module_protocol::kPumpFlagCycled);
+  TEST_ASSERT_EQUAL_UINT8(flags, now[1]);
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(cycle + 0));
+  TEST_ASSERT_EQUAL_UINT16(10000, readBeU16(cycle + 2));
+  TEST_ASSERT_EQUAL_UINT16(4000, readBeU16(cycle + 4));
+  TEST_ASSERT_EQUAL_UINT16(11000, readBeU16(cycle + 6));
+  TEST_ASSERT_EQUAL_UINT16(4000, readBeU16(cycle + 8));
+  TEST_ASSERT_EQUAL_UINT16(9, readBeU16(cycle + 10));
+  TEST_ASSERT_EQUAL_UINT16(9, readBeU16(cycle + 12));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(cycle + 14));
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(totals + 8));
+  TEST_ASSERT_EQUAL_UINT16(4000, readBeU16(totals + 10));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(totals + 12));
+
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kRampCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(2000);
+  rig.pump.readCycle(cycle);
+  rig.pump.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT16(1666, readBeU16(cycle + 0));
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(totals + 8));
+}
+
+/**
+ * 720 counts is 12000 mV and 620 counts is 4000 mA.
+ *
+ * @return Nothing.
+ */
+void testScaleUsesTheProductFractions()
+{
+  Rig rig;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+
+  uint8_t now[8];
+  rig.pump.readNow(now);
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(now + 2));
+  TEST_ASSERT_EQUAL_UINT16(4000, readBeU16(now + 4));
+}
+
+/**
+ * A zero denominator reads as zero instead of dividing.
+ *
+ * @return Nothing.
+ */
+void testZeroDenominatorReadsZero()
+{
+  PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  config.millivoltsDen = 0;
+  config.milliampsDen = 0;
+  FakePumpPort port;
+  FakePumpStore store;
+  Pump pump(port, store, config);
+  port.voltageCounts = kTwelveVoltCounts;
+  port.currentCounts = kLoadedCounts;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+
+  uint8_t now[8];
+  pump.readNow(now);
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(now + 2));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(now + 4));
+}
+
+/**
+ * Soft-start uses unsigned subtraction across the millisecond wrap.
+ *
+ * @return Nothing.
+ */
+void testSoftStartUsesUnsignedWrap()
+{
+  constexpr uint32_t kStart = 0xFFFFFFF0;
+  Rig rig;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kRampCounts;
+  rig.pump.update(kStart);
+  rig.pump.turnOn();
+  rig.pump.update(kStart);
+
+  uint8_t cycle[16];
+  rig.pump.readCycle(cycle);
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(cycle + 10));
+
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(kStart + 9);
+  rig.pump.readCycle(cycle);
+  TEST_ASSERT_EQUAL_UINT16(9, readBeU16(cycle + 10));
+}
+
+/**
+ * A sample that is not fresh keeps the last reading and does not
+ * fold another average.
+ *
+ * @return Nothing.
+ */
+void testStaleSampleDoesNotExtendAverage()
+{
+  Rig rig;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(1000);
+
+  rig.port.senseFresh = false;
+  rig.port.voltageCounts = kTenVoltCounts;
+  rig.pump.update(1010);
+
+  uint8_t cycle[16];
+  rig.pump.readCycle(cycle);
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(cycle + 6));
+
+  rig.port.senseFresh = true;
+  rig.pump.update(1020);
+  rig.pump.readCycle(cycle);
+  TEST_ASSERT_EQUAL_UINT16(11000, readBeU16(cycle + 6));
+}
+
+/**
+ * nPGD low on a stale sample waits for the next fresh sample
+ * before it stamps power-good.
+ *
+ * @return Nothing.
+ */
+void testPowerGoodWaitsForFreshSample()
+{
+  Rig rig;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kRampCounts;
+  rig.pump.update(1000);
+  rig.pump.turnOn();
+  rig.pump.update(1000);
+
+  rig.port.senseFresh = false;
+  rig.port.statusLow = true;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.pump.update(1009);
+  expectRunning(rig);
+
+  uint8_t cycle[16];
+  rig.pump.readCycle(cycle);
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(cycle + 2));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(cycle + 12));
+
+  rig.port.senseFresh = true;
+  rig.pump.update(1020);
+  rig.pump.readCycle(cycle);
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(cycle + 2));
+  TEST_ASSERT_EQUAL_UINT16(20, readBeU16(cycle + 10));
+  TEST_ASSERT_EQUAL_UINT16(20, readBeU16(cycle + 12));
+}
+
+/**
+ * A zero off debounce closes the cycle on the first low sample.
+ *
+ * @return Nothing.
+ */
+void testZeroDebounceClosesOnTheSameSample()
+{
+  PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  config.offDebounceMs = 0;
+  FakePumpPort port;
+  FakePumpStore store;
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  port.voltageCounts = kTwelveVoltCounts;
+  port.statusLow = true;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+
+  port.currentCounts = 0;
+  pump.update(50);
+
+  uint8_t now[8];
+  uint8_t totals[16];
+  pump.readNow(now);
+  pump.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpPhaseRunning, now[0]);
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(now + 6));
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+}
+
+/**
+ * The on-command age closes an open cycle and clears the cycled flag.
+ *
+ * @return Nothing.
+ */
+void testCommandAgeClosesOpenCycle()
+{
+  constexpr uint32_t kShortMs = 1000;
+  Rig rig(kLimitMs, kShortMs);
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+
+  rig.pump.update(kShortMs);
+
+  expectIdle(rig);
+  uint8_t now[8];
+  uint8_t cycle[16];
+  uint8_t totals[16];
+  readRecords(rig.pump, now, cycle, totals);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFlagNpgdLow, now[1]);
+  TEST_ASSERT_EQUAL_UINT16(1, readBeU16(cycle + 14));
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+  TEST_ASSERT_EQUAL_UINT16(1, readBeU16(totals + 14));
+}
+
+/**
+ * A repeated turnOn refreshes the command age and leaves the open
+ * cycle's start time alone.
+ *
+ * @return Nothing.
+ */
+void testRepeatedTurnOnLeavesOpenCycle()
+{
+  Rig rig;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(5000);
+  rig.pump.turnOn();
+  rig.pump.update(5000);
+  rig.pump.update(6000);
+  const uint32_t writes = rig.port.enableWrites;
+
+  rig.pump.turnOn();
+  rig.pump.update(6500);
+
+  TEST_ASSERT_EQUAL_UINT32(writes, rig.port.enableWrites);
+  expectRunning(rig);
+  uint8_t now[8];
+  rig.pump.readNow(now);
+  TEST_ASSERT_EQUAL_UINT16(1, readBeU16(now + 6));
+}
+
+/**
+ * turnOff closes an open cycle, then clears the cycled flag.
+ *
+ * @return Nothing.
+ */
+void testTurnOffClosesCycle()
+{
+  Rig rig;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+  rig.pump.update(250);
+
+  rig.pump.turnOff();
+
+  expectIdle(rig);
+  uint8_t now[8];
+  uint8_t totals[16];
+  rig.pump.readNow(now);
+  rig.pump.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFlagNpgdLow, now[1]);
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+}
+
+/**
+ * reset clears a fault and keeps the totals gathered before it.
+ *
+ * @return Nothing.
+ */
+void testResetKeepsTotals()
+{
+  Rig rig;
+  rig.port.currentCounts = kLoadedCounts;
+  rig.port.voltageCounts = kTwelveVoltCounts;
+  rig.port.statusLow = true;
+  rig.pump.update(0);
+  rig.pump.turnOn();
+  rig.pump.update(0);
+  rig.pump.update(250);
+  rig.pump.turnOff();
+
+  rig.port.statusLow = false;
+  armLoaded(rig, 1000);
+  rig.pump.update(1000 + kLimitMs);
+  expectFault(rig);
+
+  rig.pump.reset();
+
+  expectIdle(rig);
+  uint8_t totals[16];
+  rig.pump.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+  TEST_ASSERT_EQUAL_UINT16(1, readBeU16(totals + 12));
+}
+
+/**
+ * A cycle of at least 200 ms is still there after a new pump loads
+ * the same store. The cycle detail is not.
+ *
+ * @return Nothing.
+ */
+void testLongCyclePersists()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  port.voltageCounts = kTwelveVoltCounts;
+  port.statusLow = true;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+  port.currentCounts = 0;
+  port.statusLow = false;
+  pump.update(0);
+  pump.update(200);
+  flushStore(pump, 200);
+
+  Pump loaded(port, store, config);
+  loaded.update(1);
+  uint8_t cycle[16];
+  uint8_t totals[16];
+  loaded.readCycle(cycle);
+  loaded.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(totals + 8));
+  TEST_ASSERT_EQUAL_UINT16(4000, readBeU16(totals + 10));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(cycle + 0));
+  TEST_ASSERT_EQUAL_UINT16(0, readBeU16(cycle + 4));
+}
+
+/**
+ * A cycle shorter than 200 ms stays in RAM and is gone from a new
+ * pump on the same store.
+ *
+ * @return Nothing.
+ */
+void testShortCycleDoesNotPersist()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  port.voltageCounts = kTwelveVoltCounts;
+  port.statusLow = true;
+  pump.update(1000);
+  pump.turnOn();
+  pump.update(1000);
+  port.currentCounts = 0;
+  port.statusLow = false;
+  pump.update(1000);
+  pump.update(1100);
+
+  uint8_t totals[16];
+  pump.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+  flushStore(pump, 1100);
+
+  Pump loaded(port, store, config);
+  loaded.update(1);
+  loaded.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(0, readBeU32(totals));
+}
+
+/**
+ * A later long cycle's saved image includes the earlier short cycle
+ * and the failed start.
+ *
+ * @return Nothing.
+ */
+void testLaterLongCyclePersistsEarlierTotals()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+
+  port.currentCounts = kLoadedCounts;
+  port.voltageCounts = kTwelveVoltCounts;
+  pump.update(1000);
+  pump.turnOn();
+  pump.update(1000);
+  port.currentCounts = 0;
+  pump.update(1000);
+  pump.update(1100);
+
+  port.currentCounts = kLoadedCounts;
+  port.statusLow = true;
+  pump.update(2000);
+  port.currentCounts = 0;
+  port.statusLow = false;
+  pump.update(2050);
+  pump.update(2100);
+
+  port.currentCounts = kLoadedCounts;
+  port.statusLow = true;
+  pump.update(3000);
+  port.currentCounts = 0;
+  port.statusLow = false;
+  pump.update(3000);
+  pump.update(3200);
+  flushStore(pump, 3200);
+
+  Pump loaded(port, store, config);
+  loaded.update(1);
+  uint8_t totals[16];
+  loaded.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(2, readBeU32(totals));
+  TEST_ASSERT_EQUAL_UINT16(1, readBeU16(totals + 12));
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(totals + 8));
+  TEST_ASSERT_EQUAL_UINT16(4000, readBeU16(totals + 10));
+}
+
+/**
+ * A save stopped after a few bytes does not load.
+ *
+ * @return Nothing.
+ */
+void testTruncatedSaveDoesNotLoad()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  port.voltageCounts = kTwelveVoltCounts;
+  port.statusLow = true;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+  port.currentCounts = 0;
+  port.statusLow = false;
+  pump.update(0);
+  pump.update(200);
+  for (uint8_t step = 0; step < 5; ++step)
+  {
+    pump.update(200);
+  }
+
+  Pump loaded(port, store, config);
+  loaded.update(1);
+  uint8_t totals[16];
+  loaded.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(0, readBeU32(totals));
+}
+
+/**
+ * A finished slot stays the one that loads when the next save is
+ * abandoned after a few bytes.
+ *
+ * @return Nothing.
+ */
+void testTruncatedSaveLeavesPreviousSlot()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  port.voltageCounts = kTwelveVoltCounts;
+  port.statusLow = true;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+  port.currentCounts = 0;
+  port.statusLow = false;
+  pump.update(0);
+  pump.update(200);
+  flushStore(pump, 200);
+
+  port.currentCounts = kLoadedCounts;
+  port.statusLow = true;
+  pump.update(1000);
+  port.currentCounts = 0;
+  port.statusLow = false;
+  pump.update(1000);
+  pump.update(1200);
+  for (uint8_t step = 0; step < 5; ++step)
+  {
+    pump.update(1200);
+  }
+
+  Pump loaded(port, store, config);
+  loaded.update(1);
+  uint8_t totals[16];
+  loaded.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+}
+
+/**
  * Runs the pump state-machine tests. The desktop main() calls this.
  *
  * @return Nothing.
@@ -600,27 +1414,50 @@ void testTurnOnAfterCommandAge()
 void runPumpTests()
 {
   RUN_TEST(testBootWithStatusHighStaysOff);
-  RUN_TEST(testTurnOnBeforeLimitReportsOnWithLampsOff);
+  RUN_TEST(testZeroCurrentStaysHeldPastTheLimit);
   RUN_TEST(testSecondTurnOnDoesNotRestartTheWindow);
   RUN_TEST(testStatusLowDuringStartTurnsGreenOn);
   RUN_TEST(testStatusHighThroughLimitFaults);
   RUN_TEST(testLimitBoundary);
+  RUN_TEST(testUnarmedLimitSampleDoesNotFault);
   RUN_TEST(testStatusLowAtTurnOnIsRunning);
   RUN_TEST(testStatusBlipWhileRunningStaysOn);
   RUN_TEST(testStatusHighWhileRunningFaults);
+  RUN_TEST(testRunningWithNoCurrentGoesHeldWhenNpgdRises);
   RUN_TEST(testCommandsWhileFaultedAreIgnored);
-  RUN_TEST(testTurnOffFromStartingAndOn);
+  RUN_TEST(testTurnOffFromHeldAndRunning);
   RUN_TEST(testResetFromFaultOnAndOff);
   RUN_TEST(testLimitUsesUnsignedWrap);
   RUN_TEST(testStatusLimitIsTheConstructorArgument);
   RUN_TEST(testCommandAgeBoundary);
   RUN_TEST(testRepeatedOnExtendsCommandAge);
-  RUN_TEST(testRepeatedOnWhileStartingLeavesEnableHigh);
+  RUN_TEST(testRepeatedOnWhileHeldLeavesEnableHigh);
   RUN_TEST(testCommandLimitIsTheConstructorArgument);
-  RUN_TEST(testCommandAgeWhileStartingTurnsOff);
+  RUN_TEST(testCommandAgeWhileHeldTurnsOff);
   RUN_TEST(testStatusLowDoesNotRefreshCommandAge);
   RUN_TEST(testStatusFaultWinsOnTheSharedInstant);
+  RUN_TEST(testSharedInstantWithNoCurrentTurnsOff);
   RUN_TEST(testCommandAgeLeavesFaultLatched);
   RUN_TEST(testCommandAgeUsesUnsignedWrap);
   RUN_TEST(testTurnOnAfterCommandAge);
+  RUN_TEST(testHeldThenCurrentRiseStartsClean);
+  RUN_TEST(testLoadedCurrentAndNpgdLowRuns);
+  RUN_TEST(testCurrentBlipBeforeNpgdIsFailedStart);
+  RUN_TEST(testCurrentFallWithNpgdLowStaysRunning);
+  RUN_TEST(testRunClosesIntoHeldWithRecord);
+  RUN_TEST(testScaleUsesTheProductFractions);
+  RUN_TEST(testZeroDenominatorReadsZero);
+  RUN_TEST(testSoftStartUsesUnsignedWrap);
+  RUN_TEST(testStaleSampleDoesNotExtendAverage);
+  RUN_TEST(testPowerGoodWaitsForFreshSample);
+  RUN_TEST(testZeroDebounceClosesOnTheSameSample);
+  RUN_TEST(testCommandAgeClosesOpenCycle);
+  RUN_TEST(testRepeatedTurnOnLeavesOpenCycle);
+  RUN_TEST(testTurnOffClosesCycle);
+  RUN_TEST(testResetKeepsTotals);
+  RUN_TEST(testLongCyclePersists);
+  RUN_TEST(testShortCycleDoesNotPersist);
+  RUN_TEST(testLaterLongCyclePersistsEarlierTotals);
+  RUN_TEST(testTruncatedSaveDoesNotLoad);
+  RUN_TEST(testTruncatedSaveLeavesPreviousSlot);
 }

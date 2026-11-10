@@ -12,6 +12,9 @@ public:
   bool runningLamp = false;
   bool warningLamp = false;
   bool statusLow = false;
+  uint16_t voltageCounts = 0;
+  uint16_t currentCounts = 0;
+  bool senseFresh = true;
   uint32_t enableWrites = 0;
 
   /**
@@ -56,5 +59,21 @@ public:
   void setWarningLamp(bool on) override
   {
     warningLamp = on;
+  }
+
+  /**
+   * Returns the counts the test stored. senseFresh stays as the
+   * test left it, so each update can sample. The AVR driver clears
+   * its own fresh flag.
+   *
+   * @return Pair stored by the test.
+   */
+  PumpSense readSense() override
+  {
+    PumpSense sense;
+    sense.voltageCounts = voltageCounts;
+    sense.currentCounts = currentCounts;
+    sense.fresh = senseFresh;
+    return sense;
   }
 };

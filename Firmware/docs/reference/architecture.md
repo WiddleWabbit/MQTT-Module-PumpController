@@ -11,10 +11,11 @@ and calls each once per pass.
 ## Classes
 
 `setup` calls `pumpPort.begin()`, which drives enable and both lamps
-low and leaves `nPGD` an input, then drives `SNS_PIN` and configures
-`MOD_PIN`. `loop` samples `pump` with interrupts off, reads `MOD_PIN`,
-and calls `ModuleLink::update`. The objects are `moduleSlave`
-(`AvrTwi0Slave`), `pumpPort` (`AvrPumpPort`), `pump` (`Pump`), and
+low, leaves `nPGD` an input, and starts the first sense pair, then
+drives `SNS_PIN` and configures `MOD_PIN`. `loop` samples `pump` with
+interrupts off, reads `MOD_PIN`, and calls `ModuleLink::update`. The
+objects are `moduleSlave` (`AvrTwi0Slave`), `pumpPort`
+(`AvrPumpPort`), `pumpStore` (`AvrPumpStore`), `pump` (`Pump`), and
 `moduleLink` (`ModuleLink`).
 
 ## States
@@ -25,9 +26,9 @@ are the link's states, on the [module link reference](module-link.md).
 ## Sequences
 
 1. Construction registers the master-write handler. The slave stays off. The pump phase is off. The constructor does not drive pins.
-2. `setup` calls `pumpPort.begin()`. Enable and both lamps go low. `PMP_STATUS_PIN` is an input.
+2. `setup` calls `pumpPort.begin()`. Enable and both lamps go low. `PMP_STATUS_PIN` is an input. The first voltage conversion starts.
 3. `setup` sets `SNS_PIN` as an output driven low and `MOD_PIN` as an input with pull-up.
-4. Each `loop` calls `pump.update(millis())` with interrupts off, then reads `MOD_PIN` and calls the link. Both calls return without waiting.
+4. Each `loop` calls `pump.update(millis())` with interrupts off. That call may program one changed EEPROM byte. It then reads `MOD_PIN` and calls the link. Both calls return without waiting.
 
 The host holds MOD low for `kModGateMaxMs` (5 ms). Because `loop` does
 not block, the unconfigured address is enabled on the pass that sees
@@ -50,14 +51,19 @@ Declared in `src/main.cpp`.
 | `MOD_PIN` | 2 | PA6 | Enumeration select, input pull-up |
 | `SNS_PIN` | 3 | PA7 | Seated detect, driven low |
 | `RESET_PIN` | 10 | PA3 | Reset button. This pass does not read it |
-| `P_WARN_PIN` | 0 | PA4 | Yellow warning lamp. High lights it. On while faulted |
-| `P_ON_PIN` | 1 | PA5 | Green run lamp. High lights it. On while `nPGD` is low |
-| `PMP_EN_PIN` | 6 | PB1 | LM5060 enable. High turns the switch on. Default TWI SDA |
-| `PMP_STATUS_PIN` | 7 | PB0 | LM5060 `nPGD`. Low means the switch has started. Default TWI SCL |
+| `PI_SNS_PIN` | 0 | PA4 | INA186 OUT. ADC0 AIN4. Pump current |
+| `PV_SNS_PIN` | 1 | PA5 | Pump-terminal divider. ADC0 AIN5 |
+| `P_WARN_PIN` | 4 | PB3 | Yellow warning lamp. High lights it. On while faulted |
+| `P_ON_PIN` | 5 | PB2 | Green run lamp. High lights it. On while running |
+| `PMP_EN_PIN` | 6 | PB1 | MCU side of the pressure AND gate. High is the command. Default TWI SDA |
+| `PMP_STATUS_PIN` | 7 | PB0 | LM5060 `nPGD`. Low means the switch has enhanced. Default TWI SCL |
 | `MODULE_TYPE` | `kTypePumpModule` | | Reported by `GET_IDENTITY` |
-| `FIRMWARE_VERSION` | 1 | | Reported by `GET_IDENTITY` |
-| `PUMP_STATUS_LIMIT_MS` | 300 | | How long `nPGD` may stay high before a fault |
-| `PUMP_COMMAND_LIMIT_MS` | 180000 | | How long starting or on may continue after the last `SET_PUMP` on |
+| `FIRMWARE_VERSION` | 2 | | Reported by `GET_IDENTITY` |
+| `PUMP_STATUS_LIMIT_MS` | 300 | | How long current may stay up while `nPGD` stays high |
+| `PUMP_COMMAND_LIMIT_MS` | 180000 | | How long held or running may continue after the last `SET_PUMP` on |
+
+The sense scale and the cycle thresholds are on the
+[pump reference](pump.md).
 
 `kTypePumpModule` is `0x0300` in `ModuleProtocol.h`. PA0 stays the UPDI
 pin.
@@ -86,6 +92,7 @@ path is not executed on the desktop.
 
 - `src/main.cpp`
 - `lib/Drivers/AvrPumpPort.h`
+- `lib/Drivers/AvrPumpStore.h`
 - `lib/Logic/Pump.h`
 - `platformio.ini`
 

@@ -67,16 +67,55 @@ On the AVR the handler runs from the TWI interrupt. On the desktop,
 | `SET_ADDRESS` | disabled, already assigned, or address outside `0x10`–`0x6F` | no reply, no commit |
 | `GET_PUMP_STATE` | empty payload | `Ok` and one state byte. See the [pump reference](pump.md). This read does not refresh the on-command age |
 | `GET_PUMP_STATE` | any payload | `BadLength`. The pump is unchanged |
-| `SET_PUMP` | one byte, `0` or `1` | `Ok` and the state byte. Off turns the switch off. On turns it on. A further on while starting or on leaves enable high and refreshes the on-command age. A fault stays faulted |
+| `SET_PUMP` | one byte, `0` or `1` | `Ok` and the state byte. Off turns the switch off. On turns it on. A further on while held or running leaves enable high and refreshes the on-command age. A fault stays faulted |
 | `SET_PUMP` | empty, two bytes, or a byte other than `0` or `1` | `BadLength`. The pump is unchanged |
 | `RESET_PUMP` | empty payload | clears a fault and turns the switch off. `Ok` and the state byte |
 | `RESET_PUMP` | any payload | `BadLength`. The pump is unchanged |
+| `GET_PUMP_NOW` | empty payload | `Ok` and 8 bytes. See the layout below. Does not refresh the on-command age |
+| `GET_PUMP_NOW` | any payload | `BadLength`. The pump is unchanged |
+| `GET_PUMP_CYCLE` | empty payload | `Ok` and 16 bytes. The open cycle, else the last one that closed, else zeros |
+| `GET_PUMP_CYCLE` | any payload | `BadLength`. The pump is unchanged |
+| `GET_PUMP_TOTALS` | empty payload | `Ok` and 16 bytes. Lifetime counts. Peaks move while a cycle is still open |
+| `GET_PUMP_TOTALS` | any payload | `BadLength`. The pump is unchanged |
 | any other command, including `ECHO` and `GET_SENSOR_COUNT` | | `UnknownCmd` |
 
 Identity payload, big-endian: type high, type low, `kProtocolVersion`,
-firmware high, firmware low. `kIdentityPayloadLen` is 5. For
-`kTypePumpModule`, protocol 1, and firmware `0x0001` the worked frame
-is `07 00 03 00 01 00 01 D9`.
+firmware high, firmware low. `kIdentityPayloadLen` is 5. The sketch
+passes firmware 2. For `kTypePumpModule`, protocol 1, and firmware
+`0x0002` the worked frame is `07 00 03 00 01 00 02 D0`. The desktop
+identity test still uses firmware `0x0001`, frame
+`07 00 03 00 01 00 01 D9`.
+
+`GET_PUMP_NOW` is 8 bytes, big-endian:
+
+| Offset | Field |
+| --- | --- |
+| 0 | Phase. `0` off, `1` held, `2` running, `3` fault |
+| 1 | Flags. Bit 0 `nPGD` low (`0x01`). Bit 1 enable high (`0x02`). Bit 2 a completed cycle since the last entry to off (`0x04`) |
+| 2-3 | Millivolts now |
+| 4-5 | Milliamps now |
+| 6-7 | Open-cycle run seconds, or 0 |
+
+`GET_PUMP_CYCLE` is 16 bytes. Each field is a big-endian `u16`, in
+order: peak millivolts, minimum millivolts after power-good (0 until
+then), peak milliamps, average millivolts, average milliamps,
+soft-start milliseconds (0 if never settled), power-good milliseconds
+(0 until `nPGD` goes low), run seconds.
+
+`GET_PUMP_TOTALS` is 16 bytes, big-endian: completed cycles (`u32`),
+total conducting seconds (`u32`), lifetime peak millivolts (`u16`),
+lifetime peak milliamps (`u16`), failed starts (`u16`), last completed
+run seconds (`u16`).
+
+A 16-byte payload uses length field 18. The CRC is the last byte of
+the 19-byte reply, so that reply has no `0xFF` pad. A held sample at
+720 voltage counts and 620 current counts, `nPGD` still high, is now
+`0A 00 01 02 2E E0 0F A0 00 00 10` and cycle
+`12 00 2E E0 00 00 0F A0 00 00 00 00 00 00 00 00 00 00 D0`. The
+totals of that same sample are eight zero bytes, then `2E E0 0F A0`,
+then four zero bytes: the lifetime peaks have moved and the completed
+count is still zero. Field meanings are on the
+[pump reference](pump.md).
 
 `SET_ADDRESS` commits from the stop callback, before the motherboard
 releases MOD. A later `SET_ADDRESS` is ignored. `0x00` is not an
@@ -127,10 +166,14 @@ values it was given.
 | `testSetPumpWhileFaultedStaysFault` | `SET` on or off while faulted returns fault and leaves enable low |
 | `testResetClearsFault` | `RESET` returns off. A later `SET` on runs |
 | `testResetRejectsPayload` | A payload is `BadLength` and the fault stays |
-| `testStartTimeoutReportsFault` | `GET` during the window is on. After the limit it is fault, yellow on |
+| `testStartTimeoutReportsFault` | `GET` during the loaded window is on, green off. After the limit it is fault, yellow on |
 | `testRunningReportsOnAndGreen` | `SET` on with `nPGD` low reports on and lights green |
 | `testRepeatedSetOnRefreshesCommandAge` | A second `SET` on does not call `setEnable`. The pump stays on until the command age after that second command |
 | `testPollAndResetDoNotRefreshCommandAge` | `PING` and `GET_PUMP_STATE` leave the command age on the last `SET` on. `RESET` from on returns off |
+| `testGetPumpRecordsWhenIdle` | The three record reads before a sample are zeros. Now is 8 bytes. Cycle and totals are 16 |
+| `testGetPumpNowReportsHeldSample` | A held 12000 mV / 4000 mA sample. Lifetime peaks are in totals. Completed counts stay zero |
+| `testGetPumpRecordsRejectPayload` | A payload on any record read is `BadLength`. The pump stays off |
+| `testGetPumpRecordsDoNotRefreshCommandAge` | The three reads, including a rejected one, leave the command age on the last `SET` on |
 
 Pump state-machine cases are on the [pump reference](pump.md).
 `test_module_link.cpp` calls `runPumpTests()`.
@@ -146,3 +189,4 @@ C:\Users\Nathan\.platformio\penv\Scripts\platformio.exe test -e native
 - `test/test_desktop/test_module_link.cpp`
 - `test/test_desktop/fakes/FakeModuleSlavePort.h`
 - `test/test_desktop/fakes/FakePumpPort.h`
+- `test/test_desktop/fakes/FakePumpStore.h`

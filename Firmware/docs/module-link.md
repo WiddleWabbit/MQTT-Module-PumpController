@@ -10,8 +10,15 @@ keeps the assigned address. It reports the type and firmware version
 supplied at construction, and protocol version 1.
 
 `GET_PUMP_STATE`, `SET_PUMP`, and `RESET_PUMP` call the pump and reply
-with its state byte. A command this board does not implement returns
+with its state byte. `GET_PUMP_NOW`, `GET_PUMP_CYCLE`, and
+`GET_PUMP_TOTALS` are empty requests. They reply with the run record
+and do not refresh the on-command age. A payload on any of them is
+`BadLength`. A command this board does not implement returns
 `UnknownCmd`.
+
+The sketch reports firmware 2. The worked identity frame, and the
+firmware 1 frame the desktop test still checks, are on the reference
+page.
 
 The module includes no Arduino headers.
 
@@ -28,7 +35,7 @@ constructor registered, from the TWI receive callback or from
 ```text
 ModuleLink
   IModuleSlavePort    enable, disable, setAddress, setReply
-  Pump                state for GET, SET, and RESET
+  Pump                state and the run record
 ```
 
 The link does not create the pump. `main.cpp` does, and passes it in.

@@ -5,6 +5,7 @@
 #include "Pump.h"
 #include "fakes/FakeModuleSlavePort.h"
 #include "fakes/FakePumpPort.h"
+#include "fakes/FakePumpStore.h"
 
 /**
  * Runs the pump state-machine tests. Defined in test_pump.cpp.
@@ -22,12 +23,37 @@ constexpr uint32_t kStatusLimitMs = 300;
 constexpr uint32_t kCommandLimitMs = 3UL * 60UL * 1000UL;
 
 /**
+ * Product scale and limits for the link's pump.
+ *
+ * @param statusLimitMs Load-fault window.
+ * @param commandLimitMs On-command age.
+ * @return Settings copied into the pump.
+ */
+PumpConfig makeConfig(uint32_t statusLimitMs, uint32_t commandLimitMs)
+{
+  PumpConfig config;
+  config.statusLimitMs = statusLimitMs;
+  config.commandLimitMs = commandLimitMs;
+  config.onMilliamps = 300;
+  config.offMilliamps = 150;
+  config.offDebounceMs = 20;
+  config.settledMillivolts = 10000;
+  config.cycleMinMs = 200;
+  config.millivoltsNum = 50;
+  config.millivoltsDen = 3;
+  config.milliampsNum = 6600;
+  config.milliampsDen = 1023;
+  return config;
+}
+
+/**
  * One link, its slave fake, and the pump the link commands.
  */
 struct Board
 {
   FakeModuleSlavePort port;
   FakePumpPort pumpPort;
+  FakePumpStore pumpStore;
   Pump pump;
   ModuleLink link;
 
@@ -41,7 +67,7 @@ struct Board
   explicit Board(uint16_t typeId = kTestType,
                  uint16_t firmwareVersion = kTestFirmwareVersion,
                  uint32_t commandLimitMs = kCommandLimitMs)
-    : pump(pumpPort, kStatusLimitMs, commandLimitMs),
+    : pump(pumpPort, pumpStore, makeConfig(kStatusLimitMs, commandLimitMs)),
       link(port, pump, typeId, firmwareVersion)
   {
   }
@@ -132,6 +158,22 @@ void fillIdentity(uint16_t typeId, uint16_t firmwareVersion, uint8_t* out)
   out[2] = module_protocol::kProtocolVersion;
   out[3] = static_cast<uint8_t>(firmwareVersion >> 8);
   out[4] = static_cast<uint8_t>(firmwareVersion & 0xFF);
+}
+
+/**
+ * Arms a loaded cycle at time 0 and faults it at the status limit.
+ *
+ * @param board Link under test.
+ * @return Nothing.
+ */
+void loadAndFault(Board& board)
+{
+  board.pumpPort.currentCounts = 620;
+  board.pump.update(0);
+  const uint8_t on = module_protocol::kPumpStateOn;
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(0);
+  board.pump.update(kStatusLimitMs);
 }
 
 }
@@ -541,12 +583,10 @@ void testSetPumpRejectsBadPayload()
 void testSetPumpWhileFaultedStaysFault()
 {
   Board board;
-  board.pump.update(0);
   const uint8_t on = module_protocol::kPumpStateOn;
   const uint8_t off = module_protocol::kPumpStateOff;
   const uint8_t fault = module_protocol::kPumpStateFault;
-  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
-  board.pump.update(kStatusLimitMs);
+  loadAndFault(board);
 
   writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
   expectReply(board.port, module_protocol::kStatusOk, &fault, 1);
@@ -568,11 +608,9 @@ void testSetPumpWhileFaultedStaysFault()
 void testResetClearsFault()
 {
   Board board;
-  board.pump.update(0);
   const uint8_t on = module_protocol::kPumpStateOn;
   const uint8_t off = module_protocol::kPumpStateOff;
-  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
-  board.pump.update(kStatusLimitMs);
+  loadAndFault(board);
 
   writeCommand(board.port, module_protocol::kCmdResetPump, nullptr, 0);
 
@@ -596,12 +634,9 @@ void testResetClearsFault()
 void testResetRejectsPayload()
 {
   Board board;
-  board.pump.update(0);
-  const uint8_t on = module_protocol::kPumpStateOn;
   const uint8_t extra = 0;
   const uint8_t fault = module_protocol::kPumpStateFault;
-  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
-  board.pump.update(kStatusLimitMs);
+  loadAndFault(board);
 
   writeCommand(board.port, module_protocol::kCmdResetPump, &extra, 1);
 
@@ -620,10 +655,12 @@ void testResetRejectsPayload()
 void testStartTimeoutReportsFault()
 {
   Board board;
+  board.pumpPort.currentCounts = 620;
   board.pump.update(0);
   const uint8_t on = module_protocol::kPumpStateOn;
   const uint8_t fault = module_protocol::kPumpStateFault;
   writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(0);
 
   board.pump.update(kStatusLimitMs - 1);
   writeCommand(board.port, module_protocol::kCmdGetPumpState, nullptr, 0);
@@ -743,6 +780,127 @@ void testPollAndResetDoNotRefreshCommandAge()
 }
 
 /**
+ * GET_PUMP_NOW, GET_PUMP_CYCLE, and GET_PUMP_TOTALS before any
+ * sample are zeros. NOW is 8 bytes. The other two are 16, so the
+ * CRC sits on the last byte of the 19-byte reply.
+ *
+ * @return Nothing.
+ */
+void testGetPumpRecordsWhenIdle()
+{
+  Board board;
+  uint8_t now[module_protocol::kPumpNowPayloadLen] = {};
+  uint8_t record[module_protocol::kPumpCyclePayloadLen] = {};
+
+  writeCommand(board.port, module_protocol::kCmdGetPumpNow, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, now,
+              module_protocol::kPumpNowPayloadLen);
+
+  writeCommand(board.port, module_protocol::kCmdGetPumpCycle, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, record,
+              module_protocol::kPumpCyclePayloadLen);
+
+  writeCommand(board.port, module_protocol::kCmdGetPumpTotals, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, record,
+              module_protocol::kPumpTotalsPayloadLen);
+
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+}
+
+/**
+ * A held sample is phase 1, enable high, 12000 mV, and 4000 mA.
+ * The open cycle keeps that peak. Lifetime peaks move with the
+ * sample. Completed counts stay zero until the cycle closes.
+ *
+ * @return Nothing.
+ */
+void testGetPumpNowReportsHeldSample()
+{
+  Board board;
+  board.pump.update(0);
+  board.pumpPort.voltageCounts = 720;
+  board.pumpPort.currentCounts = 620;
+  const uint8_t on = module_protocol::kPumpStateOn;
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(0);
+
+  const uint8_t now[] = {0x01, 0x02, 0x2E, 0xE0, 0x0F, 0xA0, 0x00, 0x00};
+  writeCommand(board.port, module_protocol::kCmdGetPumpNow, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, now,
+              module_protocol::kPumpNowPayloadLen);
+
+  const uint8_t cycle[] = {
+    0x2E, 0xE0, 0x00, 0x00, 0x0F, 0xA0, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  writeCommand(board.port, module_protocol::kCmdGetPumpCycle, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, cycle,
+              module_protocol::kPumpCyclePayloadLen);
+
+  const uint8_t totals[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x2E, 0xE0, 0x0F, 0xA0, 0x00, 0x00, 0x00, 0x00};
+  writeCommand(board.port, module_protocol::kCmdGetPumpTotals, nullptr, 0);
+  expectReply(board.port, module_protocol::kStatusOk, totals,
+              module_protocol::kPumpTotalsPayloadLen);
+}
+
+/**
+ * A payload on any of the three record reads is BadLength.
+ * The pump stays off.
+ *
+ * @return Nothing.
+ */
+void testGetPumpRecordsRejectPayload()
+{
+  Board board;
+  const uint8_t extra = 0;
+
+  writeCommand(board.port, module_protocol::kCmdGetPumpNow, &extra, 1);
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+  writeCommand(board.port, module_protocol::kCmdGetPumpCycle, &extra, 1);
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+  writeCommand(board.port, module_protocol::kCmdGetPumpTotals, &extra, 1);
+  expectReply(board.port, module_protocol::kStatusBadLength, nullptr, 0);
+
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+}
+
+/**
+ * The three record reads, including a rejected one, leave the
+ * on-command age on the last SET on.
+ *
+ * @return Nothing.
+ */
+void testGetPumpRecordsDoNotRefreshCommandAge()
+{
+  constexpr uint32_t kShortMs = 1000;
+  Board board(kTestType, kTestFirmwareVersion, kShortMs);
+  board.pump.update(0);
+  board.pumpPort.statusLow = true;
+  const uint8_t on = module_protocol::kPumpStateOn;
+  const uint8_t off = module_protocol::kPumpStateOff;
+  const uint8_t extra = 1;
+
+  writeCommand(board.port, module_protocol::kCmdSetPump, &on, 1);
+  board.pump.update(200);
+  writeCommand(board.port, module_protocol::kCmdGetPumpNow, &extra, 1);
+  board.pump.update(400);
+  writeCommand(board.port, module_protocol::kCmdGetPumpNow, nullptr, 0);
+  writeCommand(board.port, module_protocol::kCmdGetPumpCycle, nullptr, 0);
+  writeCommand(board.port, module_protocol::kCmdGetPumpTotals, nullptr, 0);
+
+  board.pump.update(kShortMs - 1);
+  TEST_ASSERT_EQUAL_UINT8(on, board.pump.state());
+  TEST_ASSERT_TRUE(board.pumpPort.enable);
+
+  board.pump.update(kShortMs);
+  TEST_ASSERT_EQUAL_UINT8(off, board.pump.state());
+  TEST_ASSERT_FALSE(board.pumpPort.enable);
+}
+
+/**
  * Runs the module-link desktop tests.
  *
  * @return Unity result.
@@ -772,6 +930,10 @@ int main()
   RUN_TEST(testRunningReportsOnAndGreen);
   RUN_TEST(testRepeatedSetOnRefreshesCommandAge);
   RUN_TEST(testPollAndResetDoNotRefreshCommandAge);
+  RUN_TEST(testGetPumpRecordsWhenIdle);
+  RUN_TEST(testGetPumpNowReportsHeldSample);
+  RUN_TEST(testGetPumpRecordsRejectPayload);
+  RUN_TEST(testGetPumpRecordsDoNotRefreshCommandAge);
   runPumpTests();
   return UNITY_END();
 }

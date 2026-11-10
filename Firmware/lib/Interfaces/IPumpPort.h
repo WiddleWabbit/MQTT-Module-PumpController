@@ -1,8 +1,20 @@
 #pragma once
 
 /**
- * Pump switch, LM5060 nPGD input, and the two lamps. The AVR driver
- * is the board. Desktop tests use a fake. No Arduino types.
+ * One ADC pair from the pump sense pins. fresh is true when this
+ * pair is new since the previous read. Counts are 10-bit.
+ */
+struct PumpSense
+{
+  uint16_t voltageCounts;
+  uint16_t currentCounts;
+  bool fresh;
+};
+
+/**
+ * Pump switch, LM5060 nPGD input, the two lamps, and the sense
+ * pair. The AVR driver is the board. Desktop tests use a fake.
+ * No Arduino types.
  */
 class IPumpPort
 {
@@ -10,15 +22,16 @@ public:
   virtual ~IPumpPort() = default;
 
   /**
-   * Drives the LM5060 enable. High turns the switch on.
+   * Drives the MCU side of the pressure AND gate. High is the
+   * command. The gate output is LM5060 enable.
    *
-   * @param on True to drive enable high.
+   * @param on True to drive the command high.
    * @return Nothing.
    */
   virtual void setEnable(bool on) = 0;
 
   /**
-   * Reads nPGD. Low means the switch has started.
+   * Reads nPGD. Low means the switch has enhanced.
    *
    * @return True when the status pin reads low.
    */
@@ -39,4 +52,12 @@ public:
    * @return Nothing.
    */
   virtual void setWarningLamp(bool on) = 0;
+
+  /**
+   * Returns the latest voltage and current counts. A new pair is
+   * fresh once. The caller does not wait for a conversion.
+   *
+   * @return Latest pair. Counts are unchanged when fresh is false.
+   */
+  virtual PumpSense readSense() = 0;
 };

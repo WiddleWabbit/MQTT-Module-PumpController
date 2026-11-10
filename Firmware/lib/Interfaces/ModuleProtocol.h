@@ -99,14 +99,31 @@ constexpr uint8_t kSolenoidStateDisconnected = 2;
 // implement these. One pump per module. State bytes are
 // kPumpStateOff, kPumpStateOn, and kPumpStateFault.
 // SET_PUMP accepts only off or on. RESET_PUMP is a separate command.
+// GET_PUMP_NOW, GET_PUMP_CYCLE, and GET_PUMP_TOTALS are empty
+// requests. Payloads are big-endian. Phase bytes are the kPumpPhase
+// values. NOW flags are kPumpFlagNpgdLow, kPumpFlagEnableHigh, and
+// kPumpFlagCycled.
 constexpr uint8_t kCmdGetPumpState = 0x60;
 constexpr uint8_t kCmdSetPump = 0x61;
 constexpr uint8_t kCmdResetPump = 0x62;
+constexpr uint8_t kCmdGetPumpNow = 0x63;
+constexpr uint8_t kCmdGetPumpCycle = 0x64;
+constexpr uint8_t kCmdGetPumpTotals = 0x65;
 constexpr uint8_t kPumpStatePayloadLen = 1;
 constexpr uint8_t kPumpSetPayloadLen = 1;
+constexpr uint8_t kPumpNowPayloadLen = 8;
+constexpr uint8_t kPumpCyclePayloadLen = 16;
+constexpr uint8_t kPumpTotalsPayloadLen = 16;
 constexpr uint8_t kPumpStateOff = 0;
 constexpr uint8_t kPumpStateOn = 1;
 constexpr uint8_t kPumpStateFault = 2;
+constexpr uint8_t kPumpPhaseOff = 0;
+constexpr uint8_t kPumpPhaseHeld = 1;
+constexpr uint8_t kPumpPhaseRunning = 2;
+constexpr uint8_t kPumpPhaseFault = 3;
+constexpr uint8_t kPumpFlagNpgdLow = 0x01;
+constexpr uint8_t kPumpFlagEnableHigh = 0x02;
+constexpr uint8_t kPumpFlagCycled = 0x04;
 
 // SET_ADDRESS on-wire size. length field = 3 (2 + 1-byte payload);
 // total frame = 4. Do not count the I2C 7-bit address as a frame byte.
