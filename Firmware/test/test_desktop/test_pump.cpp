@@ -10,6 +10,7 @@ namespace
 
 constexpr uint32_t kLimitMs = 300;
 constexpr uint32_t kCommandLimitMs = 3UL * 60UL * 1000UL;
+constexpr uint16_t kFaultAddress = 224;
 constexpr uint16_t kLoadedCounts = 620;
 constexpr uint16_t kTwelveVoltCounts = 720;
 constexpr uint16_t kTenVoltCounts = 600;
@@ -122,6 +123,27 @@ void expectFault(const Rig& rig)
   TEST_ASSERT_FALSE(rig.port.runningLamp);
   TEST_ASSERT_TRUE(rig.port.warningLamp);
   TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateFault, rig.pump.state());
+}
+
+/**
+ * Enable low, yellow on, and the given reason. Index is 0.
+ *
+ * @param port Port the pump drives.
+ * @param pump Pump under test.
+ * @param reason Fault code expected from readFault.
+ * @return Nothing.
+ */
+void expectFaulted(const FakePumpPort& port, const Pump& pump,
+                   uint8_t reason)
+{
+  TEST_ASSERT_FALSE(port.enable);
+  TEST_ASSERT_FALSE(port.runningLamp);
+  TEST_ASSERT_TRUE(port.warningLamp);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateFault, pump.state());
+  uint8_t fault[2];
+  pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(reason, fault[0]);
+  TEST_ASSERT_EQUAL_UINT8(0, fault[1]);
 }
 
 /**
@@ -1717,6 +1739,221 @@ void testResetClearsFaultReason()
 }
 
 /**
+ * A latched slow start is stored at byte 224. A new pump on that
+ * store comes back faulted, and turnOn stays faulted.
+ *
+ * @return Nothing.
+ */
+void testLatchedFaultSurvivesANewPump()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+  pump.update(kLimitMs);
+
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart,
+                          store.read(kFaultAddress));
+
+  Pump loaded(port, store, config);
+  loaded.update(1);
+  expectFaulted(port, loaded, module_protocol::kPumpFaultSlowStart);
+  loaded.turnOn();
+  expectFaulted(port, loaded, module_protocol::kPumpFaultSlowStart);
+}
+
+/**
+ * Each stored reason comes back faulted. A blank byte, a cleared
+ * byte, and the old slot magic come back off.
+ *
+ * @return Nothing.
+ */
+void testStoredFaultByteReloads()
+{
+  const uint8_t reasons[] = {
+    module_protocol::kPumpFaultSlowStart,
+    module_protocol::kPumpFaultOvercurrent,
+    module_protocol::kPumpFaultUndercurrent,
+    module_protocol::kPumpFaultStuckOn
+  };
+  for (uint8_t index = 0; index < 4; ++index)
+  {
+    FakePumpPort port;
+    FakePumpStore store;
+    store.write(kFaultAddress, reasons[index]);
+    const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+    Pump pump(port, store, config);
+    pump.update(0);
+    expectFaulted(port, pump, reasons[index]);
+  }
+
+  const uint8_t ignored[] = {0xFF, 0x00, 0xC3};
+  for (uint8_t index = 0; index < 3; ++index)
+  {
+    FakePumpPort port;
+    FakePumpStore store;
+    store.write(kFaultAddress, ignored[index]);
+    const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+    Pump pump(port, store, config);
+    pump.update(0);
+    TEST_ASSERT_FALSE(port.enable);
+    TEST_ASSERT_FALSE(port.warningLamp);
+    TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, pump.state());
+    uint8_t fault[2];
+    pump.readFault(fault);
+    TEST_ASSERT_EQUAL_UINT8(module_protocol::kFaultNone, fault[0]);
+  }
+}
+
+/**
+ * A saved totals image and a stored fault both come back.
+ *
+ * @return Nothing.
+ */
+void testStoredFaultKeepsTotals()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  port.voltageCounts = kTwelveVoltCounts;
+  port.statusLow = true;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+  port.currentCounts = 0;
+  port.statusLow = false;
+  pump.update(0);
+  pump.update(200);
+  flushStore(pump, 200);
+  store.write(kFaultAddress, module_protocol::kPumpFaultOvercurrent);
+
+  Pump loaded(port, store, config);
+  loaded.update(1);
+  expectFaulted(port, loaded, module_protocol::kPumpFaultOvercurrent);
+  uint8_t totals[16];
+  loaded.readTotals(totals);
+  TEST_ASSERT_EQUAL_UINT32(1, readBeU32(totals));
+  TEST_ASSERT_EQUAL_UINT16(12000, readBeU16(totals + 8));
+  TEST_ASSERT_EQUAL_UINT16(4000, readBeU16(totals + 10));
+}
+
+/**
+ * The update that stores a fault does not also start a totals slot.
+ * The next update does, and the reason stays.
+ *
+ * @return Nothing.
+ */
+void testFaultWriteDefersTheTotalsSlot()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  port.voltageCounts = kTwelveVoltCounts;
+  port.statusLow = true;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+
+  port.statusLow = false;
+  pump.update(200);
+  pump.update(200 + kLimitMs);
+
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart,
+                          store.read(kFaultAddress));
+  TEST_ASSERT_EQUAL_UINT8(0xFF, store.read(0));
+
+  pump.update(200 + kLimitMs);
+  TEST_ASSERT_EQUAL_UINT8(0x00, store.read(0));
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart,
+                          store.read(kFaultAddress));
+}
+
+/**
+ * reset clears the RAM fault and leaves the stored reason. The next
+ * update clears the byte. A new pump then stays off and accepts
+ * turnOn. A new pump before that update is still faulted.
+ *
+ * @return Nothing.
+ */
+void testResetClearsStoredFaultOnTheNextUpdate()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+  pump.update(kLimitMs);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart,
+                          store.read(kFaultAddress));
+
+  pump.reset();
+  uint8_t fault[2];
+  pump.readFault(fault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kFaultNone, fault[0]);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, pump.state());
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart,
+                          store.read(kFaultAddress));
+
+  Pump survived(port, store, config);
+  survived.update(1);
+  expectFaulted(port, survived, module_protocol::kPumpFaultSlowStart);
+
+  port.currentCounts = 0;
+  pump.update(kLimitMs + 1);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kFaultNone,
+                          store.read(kFaultAddress));
+
+  Pump cleared(port, store, config);
+  cleared.update(2);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOff, cleared.state());
+  uint8_t clearedFault[2];
+  cleared.readFault(clearedFault);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kFaultNone, clearedFault[0]);
+  port.statusLow = true;
+  cleared.turnOn();
+  TEST_ASSERT_TRUE(port.enable);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpStateOn, cleared.state());
+}
+
+/**
+ * The first stored reason stays when a later sample would have
+ * been overcurrent.
+ *
+ * @return Nothing.
+ */
+void testFirstFaultReasonStaysInTheStore()
+{
+  FakePumpPort port;
+  FakePumpStore store;
+  const PumpConfig config = makeConfig(kLimitMs, kCommandLimitMs);
+  Pump pump(port, store, config);
+  port.currentCounts = kLoadedCounts;
+  pump.update(0);
+  pump.turnOn();
+  pump.update(0);
+  pump.update(kLimitMs);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart,
+                          store.read(kFaultAddress));
+
+  port.currentCounts = 775;
+  pump.update(kLimitMs + 60);
+  TEST_ASSERT_EQUAL_UINT8(module_protocol::kPumpFaultSlowStart,
+                          store.read(kFaultAddress));
+  expectFaulted(port, pump, module_protocol::kPumpFaultSlowStart);
+}
+
+/**
  * Runs the pump state-machine tests. The desktop main() calls this.
  *
  * @return Nothing.
@@ -1782,4 +2019,10 @@ void runPumpTests()
   RUN_TEST(testStuckOnResetsWhenVoltageFalls);
   RUN_TEST(testSlowStartReasonStays);
   RUN_TEST(testResetClearsFaultReason);
+  RUN_TEST(testLatchedFaultSurvivesANewPump);
+  RUN_TEST(testStoredFaultByteReloads);
+  RUN_TEST(testStoredFaultKeepsTotals);
+  RUN_TEST(testFaultWriteDefersTheTotalsSlot);
+  RUN_TEST(testResetClearsStoredFaultOnTheNextUpdate);
+  RUN_TEST(testFirstFaultReasonStaysInTheStore);
 }

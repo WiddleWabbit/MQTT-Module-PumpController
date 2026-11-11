@@ -5,9 +5,10 @@
 #include "IPumpStore.h"
 
 /**
- * EEPROM totals for the pump. update() programs one byte and can
- * stall the CPU for that program. The pump writes at most one
- * changed byte per update(). Addresses past the EEPROM read as 0xFF.
+ * EEPROM for the pump totals and the fault reason. update() programs
+ * one byte and can stall the CPU for that program. The pump writes
+ * at most one changed byte per update(). Addresses past the EEPROM
+ * read as 0xFF.
  */
 class AvrPumpStore : public IPumpStore
 {

@@ -3,7 +3,8 @@
 #include <stdint.h>
 
 /**
- * Byte store for the pump totals. The AVR adapter is the EEPROM.
+ * Byte store for the pump totals and the fault reason. The AVR
+ * adapter is the EEPROM.
  * Desktop tests use a fake. The pump writes one changed byte per
  * update so a save does not hold the loop for a whole record.
  */

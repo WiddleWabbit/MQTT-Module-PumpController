@@ -32,7 +32,7 @@ interrupt.
 ```text
 Pump
   IPumpPort       enable, nPGD, lamps, voltage and current counts
-  IPumpStore      totals kept across reset
+  IPumpStore      totals and the fault reason, kept across reset
 ```
 
 `main.cpp` supplies `AvrPumpPort` and `AvrPumpStore`. Tests supply
@@ -52,7 +52,7 @@ update(nowMs)
     arm the load window, then fault at the limit
   if running and the load has already fallen: held
   on-command age: held or running turns off
-  program at most one changed totals byte
+  program at most one changed totals byte, or the fault byte
 ```
 
 `turnOn` from off stores the command time. If `nPGD` is already low
@@ -75,9 +75,15 @@ record reads fill `GET_PUMP_NOW`, `GET_PUMP_CYCLE`, and
 
 Totals for a cycle of at least `PUMP_CYCLE_MIN_MS` are written to the
 store, one changed byte per `update`. A shorter cycle stays in RAM
-until a later long cycle saves the image. After a reset the cycle
+until a later long cycle saves the image. After a chip reset the cycle
 detail is gone. The counts, lifetime peaks, failed starts, and last
 run seconds come back from the store on the first `update`.
+
+The latched reason is byte 224. A chip reset loads it and comes back
+faulted, with enable low and the yellow lamp on. `reset()` clears the
+RAM fault immediately. The next `update` writes `0` to that byte, and
+that pass does not also program a totals byte. A chip reset before
+that write comes back faulted.
 
 ## See also
 

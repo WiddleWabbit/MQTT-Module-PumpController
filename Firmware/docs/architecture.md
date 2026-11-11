@@ -75,7 +75,8 @@ reads `nPGD` and, when a pair is ready, the sense pins on its own
 port. The motherboard reads the sense line, which `SNS_PIN` holds low.
 
 The pump stores its phase, the run record, and the on-command time.
-Totals that have been saved also live in EEPROM. The link stores the
+Totals that have been saved also live in EEPROM, and so does the
+latched fault reason. The link stores the
 address and whether it has been assigned. The TWI0 adapter stores the
 reply the host clocks out. Those stores are on the
 [pump](pump.md), [module link](module-link.md), and

@@ -12,7 +12,7 @@
  * the store.
  *
  * @param port Enable, nPGD, the lamps, and the sense pair.
- * @param store Totals kept across reset.
+ * @param store Totals and the fault reason, kept across reset.
  * @param config Limits and the sense scale. Copied.
  */
 Pump::Pump(IPumpPort& port, IPumpStore& store, const PumpConfig& config)
@@ -44,6 +44,8 @@ Pump::Pump(IPumpPort& port, IPumpStore& store, const PumpConfig& config)
     _fallen(false),
     _cycledSinceOn(false),
     _saveActive(false),
+    _faultClearPending(false),
+    _storeProgrammed(false),
     _voltageMv(0),
     _currentMa(0),
     _peakMv(0),
@@ -80,9 +82,10 @@ Pump::Pump(IPumpPort& port, IPumpStore& store, const PumpConfig& config)
 /**
  * Loads the store on the first call. Samples the sense pair when
  * a new one is ready, then the fault watches, then nPGD, then the
- * on-command age. Writes at most one changed totals byte. The
- * caller must not run this
- * concurrently with turnOn, turnOff, reset, or the record reads.
+ * on-command age. Writes at most one changed store byte, either
+ * the fault reason or one totals byte. The caller must not run
+ * this concurrently with turnOn, turnOff, reset, or the record
+ * reads.
  *
  * @param nowMs Milliseconds from the same clock as the last call.
  *        Unsigned wrap is valid.
@@ -91,6 +94,7 @@ Pump::Pump(IPumpPort& port, IPumpStore& store, const PumpConfig& config)
 void Pump::update(uint32_t nowMs)
 {
   _nowMs = nowMs;
+  _storeProgrammed = false;
   if (!_storeLoaded)
   {
     _loadStore();
@@ -265,13 +269,16 @@ void Pump::turnOff()
 
 /**
  * Clears a fault and turns the switch off. Enable low is the
- * LM5060 reset. Totals are kept. A later turnOn() is accepted.
+ * LM5060 reset. The RAM fault clears now. The stored reason
+ * clears on the next update(). Totals are kept. A later turnOn()
+ * is accepted.
  *
  * @return Nothing.
  */
 void Pump::reset()
 {
   _enterOff();
+  _faultClearPending = true;
 }
 
 
@@ -688,7 +695,9 @@ void Pump::_enterRunning()
 
 /**
  * Latches fault with the first reason. A later call keeps that
- * reason. Closes an open cycle. Enable low, yellow on.
+ * reason. Closes an open cycle. Enable low, yellow on. Stores the
+ * reason when the byte differs, which is the one program for this
+ * update.
  *
  * @param reason Pump fault code. Not zero.
  * @return Nothing.
@@ -710,6 +719,11 @@ void Pump::_enterFault(uint8_t reason)
   _underArmed = false;
   _stuckArmed = false;
   _applyOutputs();
+  if (_store.read(kFaultAddress) != reason)
+  {
+    _store.write(kFaultAddress, reason);
+    _storeProgrammed = true;
+  }
 }
 
 /**
@@ -788,6 +802,7 @@ void Pump::_closeCycle()
 
 /**
  * Loads the newest valid totals slot. An empty store stays zero.
+ * A known reason at the fault address comes back faulted.
  *
  * @return Nothing.
  */
@@ -843,6 +858,27 @@ void Pump::_loadStore()
   {
     _nextSequence = bestSequence + 1;
   }
+  const uint8_t storedFault = _store.read(kFaultAddress);
+  if (_isStoredFault(storedFault))
+  {
+    _faultReason = storedFault;
+    _phase = Phase::Fault;
+    _applyOutputs();
+  }
+}
+
+/**
+ * True when the byte is one of the four pump fault reasons.
+ *
+ * @param reason Stored byte.
+ * @return True for slow start, overcurrent, undercurrent, or stuck on.
+ */
+bool Pump::_isStoredFault(uint8_t reason)
+{
+  return reason == module_protocol::kPumpFaultSlowStart ||
+         reason == module_protocol::kPumpFaultOvercurrent ||
+         reason == module_protocol::kPumpFaultUndercurrent ||
+         reason == module_protocol::kPumpFaultStuckOn;
 }
 
 /**
@@ -861,13 +897,29 @@ void Pump::_armSave()
 }
 
 /**
- * Writes at most one changed byte of the queued slot.
+ * Writes at most one changed byte. A pending fault clear takes
+ * that byte. Otherwise one byte of the queued totals slot. A fault
+ * stored earlier in this update already used the program, so the
+ * clear is dropped and the new reason stays.
  *
  * @return Nothing.
  */
 void Pump::_serviceStore()
 {
-  if (!_saveActive)
+  if (_faultClearPending)
+  {
+    _faultClearPending = false;
+    if (!_storeProgrammed)
+    {
+      const uint8_t stored = _store.read(kFaultAddress);
+      if (_isStoredFault(stored))
+      {
+        _store.write(kFaultAddress, module_protocol::kFaultNone);
+        _storeProgrammed = true;
+      }
+    }
+  }
+  if (_storeProgrammed || !_saveActive)
   {
     return;
   }

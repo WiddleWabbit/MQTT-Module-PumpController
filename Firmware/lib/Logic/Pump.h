@@ -47,7 +47,9 @@ struct PumpConfig
  *
  * A cycle opens when current rises through onMilliamps and closes
  * when it falls through offMilliamps for offDebounceMs. Totals for
- * a cycle at least cycleMinMs long are written to the store.
+ * a cycle at least cycleMinMs long are written to the store. The
+ * latched fault reason is also kept in the store, so a chip reset
+ * comes back faulted until the update after reset().
  *
  * turnOn, turnOff, reset, state, readFault, and the three record
  * reads may run from the TWI interrupt. update runs from the main
@@ -63,7 +65,7 @@ public:
    * the store.
    *
    * @param port Enable, nPGD, the lamps, and the sense pair.
-   * @param store Totals kept across reset.
+   * @param store Totals and the fault reason, kept across reset.
    * @param config Limits and the sense scale. Copied.
    */
   Pump(IPumpPort& port, IPumpStore& store, const PumpConfig& config);
@@ -71,9 +73,10 @@ public:
   /**
    * Loads the store on the first call. Samples the sense pair when
    * a new one is ready, then the fault watches, then nPGD, then the
-   * on-command age. Writes at most one changed totals byte. The
-   * caller must not run this
-   * concurrently with turnOn, turnOff, reset, or the record reads.
+   * on-command age. Writes at most one changed store byte, either
+   * the fault reason or one totals byte. The caller must not run
+   * this concurrently with turnOn, turnOff, reset, or the record
+   * reads.
    *
    * @param nowMs Milliseconds from the same clock as the last call.
    *        Unsigned wrap is valid.
@@ -141,7 +144,9 @@ public:
 
   /**
    * Clears a fault and turns the switch off. Enable low is the
-   * LM5060 reset. Totals are kept. A later turnOn() is accepted.
+   * LM5060 reset. The RAM fault clears now. The stored reason
+   * clears on the next update(). Totals are kept. A later turnOn()
+   * is accepted.
    *
    * @return Nothing.
    */
@@ -156,8 +161,13 @@ private:
     Fault
   };
 
+  // Seven slots leave address 224 free. That one byte is the fault
+  // reason, so a latch is a single program and a totals save cannot
+  // overwrite it. 0xFF, 0, and any other unknown value are no fault.
   static constexpr uint8_t kSlotBytes = 32;
-  static constexpr uint8_t kSlotCount = 8;
+  static constexpr uint8_t kSlotCount = 7;
+  static constexpr uint16_t kFaultAddress =
+      static_cast<uint16_t>(kSlotCount * kSlotBytes);
   static constexpr uint8_t kMagic = 0xC3;
 
   /**
@@ -303,10 +313,19 @@ private:
 
   /**
    * Loads the newest valid totals slot. An empty store stays zero.
+   * A known reason at the fault address comes back faulted.
    *
    * @return Nothing.
    */
   void _loadStore();
+
+  /**
+   * True when the byte is one of the four pump fault reasons.
+   *
+   * @param reason Stored byte.
+   * @return True for slow start, overcurrent, undercurrent, or stuck on.
+   */
+  static bool _isStoredFault(uint8_t reason);
 
   /**
    * Queues the current totals. A save already in progress restarts.
@@ -316,7 +335,8 @@ private:
   void _armSave();
 
   /**
-   * Writes at most one changed byte of the queued slot.
+   * Writes at most one changed byte. A pending fault clear takes
+   * that byte. Otherwise one byte of the queued totals slot.
    *
    * @return Nothing.
    */
@@ -417,6 +437,8 @@ private:
   bool _fallen;
   bool _cycledSinceOn;
   bool _saveActive;
+  volatile bool _faultClearPending;
+  bool _storeProgrammed;
   uint16_t _voltageMv;
   uint16_t _currentMa;
   uint16_t _peakMv;

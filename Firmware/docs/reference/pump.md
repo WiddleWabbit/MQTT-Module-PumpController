@@ -169,22 +169,36 @@ the command age.
 `GET_PUMP_STATE`, `PING`, and `RESET_PUMP` do not store a command
 time. `RESET_PUMP` still returns to off.
 
-The store is eight slots of 32 bytes. Byte 0 is the magic `0xC3`,
-written last. Byte 1 is CRC-8/SMBus over bytes 2..31. Bytes 2..5 are
-the sequence, little-endian. Then completed cycles, total seconds,
-lifetime peak millivolts, lifetime peak milliamps, failed starts,
-and last run seconds. The rest is zero. The newest valid slot wins.
-An empty `0xFF` store loads as zeros and the next sequence is 1.
-A save clears the magic first, writes the body, then the CRC, then
-the magic. Power loss before the magic leaves the previous slot.
-A save already in progress restarts at a new sequence.
+The store is seven slots of 32 bytes, addresses 0..223. Byte 0 of a
+slot is the magic `0xC3`, written last. Byte 1 is CRC-8/SMBus over
+bytes 2..31. Bytes 2..5 are the sequence, little-endian. Then
+completed cycles, total seconds, lifetime peak millivolts, lifetime
+peak milliamps, failed starts, and last run seconds. The rest is
+zero. The newest valid slot wins. An empty `0xFF` store loads as
+zeros and the next sequence is 1. A save clears the magic first,
+writes the body, then the CRC, then the magic. Power loss before the
+magic leaves the previous slot. A save already in progress restarts
+at a new sequence.
+
+Address 224 is the fault reason. It is outside the ring, so a totals
+save does not write it. The known values are slow start `1`,
+overcurrent `2`, undercurrent `3`, and stuck on `4`. `0xFF`, `0`, and
+any other byte load as no fault. A latch writes the reason in that
+same `update` and does not also program a totals byte. The first
+reason stays. `reset()` clears the RAM fault immediately and writes
+`0` on the next `update`. A chip reset after the reason is stored
+comes back faulted: enable low, yellow on, and `GET_FAULT` reports
+that reason. A chip reset during the program can leave the byte
+erased. A board that already used eight slots no longer loads slot 7.
+Its old magic `0xC3` is not a fault reason.
 
 Cycles shorter than `cycleMinMs` update RAM and do not start a
 write. The next cycle that is long enough saves the RAM image, so
 the earlier short cycles and failed starts persist with it. A
 session of only failed starts is not written. The in-progress cycle
-is not in the image. After the next reset, `GET_PUMP_CYCLE` detail
-is zero until a new cycle opens.
+is not in the image. After the next chip reset, `GET_PUMP_CYCLE`
+detail is zero until a new cycle opens. A stored fault reason is
+still there.
 
 ## Errors
 
@@ -307,6 +321,12 @@ is past those. Pins are on the
 | `testStuckOnResetsWhenVoltageFalls` | Voltage falling restarts that window |
 | `testSlowStartReasonStays` | The loaded `nPGD` window reports slow start, and a later high current leaves that reason |
 | `testResetClearsFaultReason` | `reset` clears the reason. A later `turnOn` runs |
+| `testLatchedFaultSurvivesANewPump` | A latched slow start is stored at byte 224. A new pump comes back faulted and ignores `turnOn` |
+| `testStoredFaultByteReloads` | Reasons 1..4 come back faulted. `0xFF`, `0`, and `0xC3` come back off |
+| `testStoredFaultKeepsTotals` | A saved totals image and a stored fault both come back |
+| `testFaultWriteDefersTheTotalsSlot` | The update that stores the fault leaves slot 0 untouched. The next update starts it |
+| `testResetClearsStoredFaultOnTheNextUpdate` | `reset` leaves byte 224 until the next `update`. A pump created before that update is still faulted. After it, a new pump stays off and accepts `turnOn` |
+| `testFirstFaultReasonStaysInTheStore` | A later overcurrent sample leaves the stored slow-start reason |
 
 Link cases for the three record commands are on the
 [module link reference](module-link.md).
